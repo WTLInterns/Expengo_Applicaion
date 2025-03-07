@@ -32,7 +32,7 @@ exports.getCabByNumber = async (req, res) => {
 
         res.json(cab);
     } catch (error) {
-        console.error("❌ Error in getCabByNumber:", error);
+        console.error(" Error in getCabByNumber:", error);
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
