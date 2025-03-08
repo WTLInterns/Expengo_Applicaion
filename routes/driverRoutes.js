@@ -7,9 +7,9 @@ const { protect } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // Get Driver Profile
-router.get("/profile",  protect, async (req, res) => {
+router.get("/profile", async (req, res) => {
   try {
-    const driver = await Driver.findById(req.user.id).select("-password");
+    const driver = await Driver.find().select("-password");
     if (!driver) return res.status(404).json({ message: "Driver not found" });
 
     res.json(driver);
@@ -19,12 +19,12 @@ router.get("/profile",  protect, async (req, res) => {
 });
 
 // Update Driver Profile
-router.put("/profile",  protect, async (req, res) => {
+router.put("/profile/:id", async (req, res) => {
   try {
     const { name, contact } = req.body;
     const updatedDriver = await Driver.findByIdAndUpdate(
-      req.user.id,
-      { name, contact },
+      req.params.id,
+      req.body,
       { new: true, runValidators: true }
     ).select("-password");
 
@@ -35,9 +35,9 @@ router.put("/profile",  protect, async (req, res) => {
 });
 
 // Delete Driver Account
-router.delete("/profile",  protect, async (req, res) => {
+router.delete("/profile/:id", async (req , res) => {
   try {
-    await Driver.findByIdAndDelete(req.user.id);
+    await Driver.findByIdAndDelete(req.params.id);
     res.json({ message: "Driver account deleted" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });

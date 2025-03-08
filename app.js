@@ -20,7 +20,8 @@ app.use(logger("dev"));
 app.use(express.json()); // Parses JSON requests
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
+
+// app.use(express.static(path.join(__dirname, "public")));
 
 // MongoDB Connection
 mongoose.connect(DB_URI, {
@@ -32,22 +33,23 @@ mongoose.connect(DB_URI, {
 
 // ✅ Serve static uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// app.use("/uploads", express.static("uploads"));
 
 // ✅ Import Routes
 const loginRoutes = require("./routes/loginRoutes");
 const driverRoutes = require("./routes/driverRoutes");
 const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
-
+const cabRoutes = require("./routes/cabRoutes");
 
 app.use("/api", loginRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/auth", forgotPasswordRoutes);
-
+app.use("/api/cabs", cabRoutes);
 // const driverRoutes = require("./routes/driverRoutes");
 // app.use("/api/driver", driverRoutes); // Add driver routes
 
-const cabRoutes = require("./routes/cabRoutes");
-app.use("/api/cabs", cabRoutes);
+// const cabRoutes = require("./routes/cabRoutes");
+// app.use("/api/cabs", cabRoutes);
 
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
