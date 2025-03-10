@@ -7,7 +7,9 @@ const AdminSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, default: "admin" },
-    verifyToken: { type: String, default: null } // ✅ Store the reset token
+    verifyToken: { type: String, default: null } ,
+    
+    
 
   },
   { timestamps: true }

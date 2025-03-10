@@ -4,7 +4,7 @@ const { sendResetOTP, forgotPassword, changePassword } = require("../controllers
 const router = express.Router();
 
 router.post("/sendpasswordlink", sendResetOTP);
-router.get("/forgotpassword/:id/:token", forgotPassword); // ✅ FIXED: Added `id` parameter
-router.post("/resetpassword/:id/:token", changePassword); // ✅ FIXED: Added `id` parameter
+router.get("/forgotpassword/:id/:token", forgotPassword); 
+router.post("/resetpassword/:id/:token", changePassword);
 
 module.exports = router;

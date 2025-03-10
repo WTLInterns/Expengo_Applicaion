@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
+const Cab = require("../models/Cab");
 require("dotenv").config();
 
 // ✅ Register Admin
@@ -24,6 +25,8 @@ exports.registerAdmin = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
+
+
 
 // ✅ Admin Login
 exports.adminLogin = async (req, res) => {
@@ -50,3 +53,4 @@ exports.adminLogin = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 };
+
