@@ -1,4 +1,4 @@
-const User = require("../models/loginModel");
+const Driver = require("../models/loginModel");
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -11,21 +11,23 @@ const router = express.Router(); // ✅ Use router instead of app
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, phone, licenseNo, adharNo } = req.body;
-    const profileImage = req.file ? req.file.path : ""; // 🔥 Save image path
+    const profileImage = req.file ? req.file.path : "";
 
-
-    // Check if all fields are provided
-    if (!name || !email || !password || !phone || !licenseNo || !adharNo ) {
+    if (!name || !email || !password || !phone || !licenseNo || !adharNo) {
       return res.status(400).json({ error: "All fields are required" });
     }
 
-    // Create and save user
-    const user = new User({ name, email, password, phone, licenseNo, adharNo, profileImage  });
-    await user.save();
+    const existingUser = await Driver.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email already exists" });
+    }
 
-    res.status(201).json({ message: "User registered successfully", user });
+    const newUser = new Driver({ name, email, password, phone, licenseNo, adharNo, profileImage });
+    await newUser.save();
+
+    res.status(201).json({ message: "User registered successfully", user: newUser });
   } catch (err) {
-    res.status(400).json({ message: "Error registering user", error: err.message });
+    res.status(500).json({ message: "Error registering user", error: err.message });
   }
 };
 
@@ -38,7 +40,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await Driver.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }

@@ -45,7 +45,7 @@ const path = require("path");
 // @route   GET /api/cabs
 const getCabs = async (req, res) => {
   try {
-    const cabs = await Cab.find();
+    const cabs = await Cab.find().populate('Driver');
     res.status(200).json(cabs);
   } catch (error) {
     res.status(500).json({ message: "Error fetching cabs", error });
@@ -56,7 +56,7 @@ const getCabs = async (req, res) => {
 // @route   GET /api/cabs/:id
 const getCabById = async (req, res) => {
   try {
-    const cab = await Cab.findOne({ cabNumber: req.params.cabNumber });
+    const cab = await Cab.findOne({ cabNumber: req.params.cabNumber }).populate('Driver');
     if (!cab) return res.status(404).json({ message: "Cab not found" });
 
     res.status(200).json(cab);
@@ -120,10 +120,64 @@ const deleteCab = async (req, res) => {
     const cab = await Cab.findByIdAndDelete(req.params.id);
     if (!cab) return res.status(404).json({ message: "Cab not found" });
 
-    res.status(200).json({ message: "Cab deleted successfully" });
+    res.json(cab);
   } catch (error) {
-    res.status(500).json({ message: "Error deleting cab", error });
+    console.error("❌ Error in getCabByNumber:", error);
+    res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
-module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab };
+const filterDate =  async (req, res) => {
+  try {
+    const { fromDate, toDate } = req.query;
+
+    // Check if fromDate or toDate is missing
+    if (!fromDate || !toDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide fromDate and toDate'
+      });
+    }
+
+    // Convert fromDate and toDate to ignore time
+    const startDate = new Date(fromDate);
+    const endDate = new Date(toDate);
+
+    // Set time to 00:00:00 for fromDate
+    startDate.setHours(0, 0, 0, 0);
+    // Set time to 23:59:59 for toDate
+    endDate.setHours(23, 59, 59, 999);
+
+    // Query to filter the cabs based on date (ignoring time)
+    const cabs = await Cab.find({
+      'location.dateTime': {
+        $gte: startDate,
+        $lte: endDate
+      }
+    });
+
+    // Check if cabs found or not
+    if (cabs.length === 0) {
+      return res.status(200).json({
+        success: false,
+        message: 'No cabs found in the provided date range'
+      });
+    }
+
+    // Send response if cabs are found
+    res.status(200).json({
+      success: true,
+      message: 'Cabs fetched successfully',
+      cabs: cabs
+    });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal Server Error'
+    });
+  }
+};
+
+module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab, filterDate };

@@ -56,6 +56,10 @@ const CabSchema = new mongoose.Schema({
       requiredService: { type: Boolean, default: false }, // Whether servicing is required
       details: { type: String }, // Details based on distance
     },
+    Driver:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:'Driver'
+    }
   });
   
 

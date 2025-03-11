@@ -1,114 +1,124 @@
-const User = require("../models/loginModel");
+const Driver = require("../models/loginModel");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken"); // ✅ FIX: Import jwt
 require("dotenv").config();
 
+// ✅ Configure Nodemailer
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
-// ✅ Send Email Link for Reset Password
+// ✅ Send OTP for Forgot Password
 const sendResetOTP = async (req, res) => {
   const { email } = req.body;
   if (!email) {
-    return res.status(401).json({ message: 'Email is required' });
+    return res.status(400).json({ message: "Email is required" });
   }
 
-  console.log('Received email:', email); 
-
   try {
-    const userFind = await User.findOne({ email: email });
-    if (!userFind) {
+    const user = await Driver.findOne({ email }); // 🔥 FIXED: Changed "User" to "Driver"
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ Generate Token
-    const token = jwt.sign({ _id: userFind._id }, process.env.JWT_SECRET, { expiresIn: "2m" });
+    // ✅ Generate OTP and Expiry Time
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const otpExpiry = new Date(Date.now() + 3 * 60 * 1000); // 3 minutes expiry
 
-    // ✅ Save Token in Database
-    const setusertoken = await User.findByIdAndUpdate(
-      { _id: userFind._id }, 
-      { verifyToken: token }, 
-      { new: true }
-    );
+    // ✅ Save OTP in Database
+    user.resetOTP = otp;
+    user.otpExpiry = otpExpiry;
+    await user.save();
 
-    if (setusertoken) {
-      const mailOptions = {
-        from: process.env.EMAIL_USER, // ✅ FIX: Use env variable
-        to: email,
-        subject: "Password Reset Request",
-        text: `Click on this link to reset your password: http://localhost:3000/forgotPassword/${userFind.id}/${setusertoken.verifyToken}`
-      };
+    console.log(`✅ OTP Generated: ${otp} (Expires at: ${otpExpiry})`);
 
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.log("error", error);
-          return res.status(500).json({ status: 500, message: "Email not sent" });
-        } else {
-          console.log("Email sent", info.response);
-          return res.status(200).json({ status: 200, message: "Email sent Successfully" });
-        }
-      });
-    }
+    // ✅ Send Email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Password Reset OTP",
+      text: `Your OTP for password reset is: ${otp}. It is valid for 3 minutes.`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("❌ Email Error:", error);
+        return res.status(500).json({ message: "Failed to send OTP" });
+      } else {
+        console.log("✅ OTP Email Sent:", info.response);
+        return res.status(200).json({ message: "OTP sent successfully" });
+      }
+    });
   } catch (error) {
-    return res.status(500).json({ status: 500, message: "Invalid user" });
+    console.error("❌ Internal Server Error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// ✅ Verify User for Forgot Password
-const forgotPassword = async (req, res) => {
-  const { id, token } = req.params;
+
+
+// ✅ Verify OTP
+const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" });
+  }
 
   try {
-    const validUser = await User.findOne({ _id: id, verifyToken: token });
-    if (!validUser) {
-      return res.status(404).json({ message: "User not found" });
+    const user = await Driver.findOne({ email });
+    if (!user || user.resetOTP !== parseInt(otp)) {
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
-    if (!verifyToken) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+    // ✅ Check if OTP is expired
+    if (user.otpExpiry < Date.now()) {
+      return res.status(400).json({ message: "OTP expired. Please request a new one." });
     }
 
-    res.status(200).json({ status: 200, validUser });
+    return res.status(200).json({ message: "OTP verified successfully" });
   } catch (error) {
-    return res.status(500).json({ status: 500, error });
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// ✅ Change Password
+
+// ✅ Change Password after OTP Verification
 const changePassword = async (req, res) => {
-  const { id, token } = req.params;
-  const { password } = req.body;
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: "Email, OTP, and new password are required" });
+  }
 
   try {
-    const validUser = await User.findOne({ _id: id, verifyToken: token });
-    if (!validUser) {
-      return res.status(404).json({ message: "User not found" });
+    const driver = await Driver.findOne({ email });
+    if (!driver) {
+      return res.status(404).json({ message: "Driver not found" });
     }
 
-    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
-    if (!verifyToken) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+    // ✅ Validate OTP
+    if (driver.resetOTP !== parseInt(otp) || Date.now() > driver.otpExpiry) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    // ✅ Hash Password
-    const newPassword = await bcrypt.hash(password, 12);
+    // ✅ Hash and Update Password
+    driver.password = await bcrypt.hash(newPassword, 12);
+    driver.resetOTP = null; // Remove OTP after password reset
+    driver.otpExpiry = null;
+    await driver.save();
 
-    // ✅ Update Password
-    await User.findByIdAndUpdate({ _id: id }, { password: newPassword });
-
-    res.status(200).json({ status: 200, message: "Password changed successfully" });
+    res.status(200).json({ message: "Password changed successfully" });
 
   } catch (error) {
-    return res.status(500).json({ status: 500, error });
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ✅ Export Functions
-module.exports = { sendResetOTP, forgotPassword, changePassword };
+// ✅ Export Controller Functions
+module.exports = { sendResetOTP, verifyOTP, changePassword };

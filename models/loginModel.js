@@ -1,7 +1,7 @@
-const mongoose = require("mongoose"); // Add this line
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema(
+const driverSchema = new mongoose.Schema(
   {
     profileImage: { type: String },
     name: {
@@ -36,11 +36,8 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-
-     // OTP fields
-  otp: String,
-  otpExpires: Date,
-
+    resetOTP: { type: Number }, // ✅ Stores OTP for password reset
+    otpExpiry: { type: Date },  // ✅ OTP expiration time
     tokens: [
       {
         token: {
@@ -56,15 +53,16 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function (next) {
+// ✅ Hash password before saving
+driverSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function (candidatePassword) {
+// ✅ Compare password method
+driverSchema.methods.comparePassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-module.exports = mongoose.model("Driver", userSchema);
+module.exports = mongoose.model("Driver", driverSchema);

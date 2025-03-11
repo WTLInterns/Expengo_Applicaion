@@ -17,6 +17,7 @@ const {
   addCab,
   updateCab,
   deleteCab,
+  filterDate
 } = require("../controllers/cabController");
 
 // Configure multer for file storage
@@ -33,6 +34,7 @@ const upload = multer({ storage });
 
 // Define routes
 router.get("/", getCabs);
+router.get('/filter-cabs',filterDate);
 router.get("/:cabNumber", getCabById);
 router.post("/", upload.fields([
   { name: "receiptImage", maxCount: 1 },

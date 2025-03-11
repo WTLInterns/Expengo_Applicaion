@@ -1,10 +1,10 @@
 const express = require("express");
-const { sendResetOTP, forgotPassword, changePassword } = require("../controllers/forgotPasswordController");
+const { sendResetOTP, verifyOTP, changePassword } = require("../controllers/forgotPasswordController");
 
 const router = express.Router();
 
-router.post("/sendpasswordlink", sendResetOTP);
-router.get("/forgotpassword/:id/:token", forgotPassword);
-router.post("/resetpassword/:id/:token", changePassword); // ✅ FIX: Use a specific path
+router.post("/sendotp", sendResetOTP); // ✅ Send OTP
+router.post("/verifyotp", verifyOTP); // ✅ Verify OTP
+router.post("/resetpassword", changePassword); // ✅ Reset Password
 
 module.exports = router;

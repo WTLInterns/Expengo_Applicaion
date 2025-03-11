@@ -2,12 +2,12 @@ const express = require("express");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
 const cors = require("cors");
+require("dotenv").config();
 const createError = require("http-errors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const path = require("path");
 
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,8 +54,13 @@ app.use("/api/cabs", cabRoutes);
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
 
-
 // Start Server
-app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+// app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
 
 // module.exports = app; 
+const forpassRoutes = require("./routes/forPassRoutes");
+app.use("/api/password", forpassRoutes);
+
+
+// Start Server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
