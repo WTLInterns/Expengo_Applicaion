@@ -21,6 +21,7 @@ const uploadFields = upload.fields([
     { name: "fuelReceiptImage", maxCount: 1 },
     { name: "transactionImage", maxCount: 1 },
     { name: "tyrePunctureImage", maxCount: 1 },
+    { name: "otherProblemsImage", maxCount: 1 },
 ]);
 
 module.exports = uploadFields;

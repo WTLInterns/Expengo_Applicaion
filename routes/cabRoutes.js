@@ -13,11 +13,12 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middleware/upload");
-const { addCab, getCabByNumber } = require("../controllers/cabController");
+const { addCab, getCabByNumber, getCabs } = require("../controllers/cabController");
 
 
 router.post("/add", upload, addCab);
 router.get("/:cabNo", getCabByNumber);
+router.get("/", getCabs);
 
 module.exports = router;
 

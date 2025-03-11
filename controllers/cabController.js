@@ -39,19 +39,22 @@
 
 
 
+
 const Cab = require("../models/Cab");
 
 exports.addCab = async (req, res) => {
     try {
         const {
             cabNumber, from, to, totalDistance, fuelType, fuelAmount,
-            fastTagMode, fastTagAmount, tyreRepairAmount, serviceDetails
+            fastTagMode, fastTagAmount, tyreRepairAmount, serviceDetails,
+            Driver, otherProblemsDetails, otherProblemsAmount
         } = req.body;
 
         // Ensure file uploads are handled correctly
         const fuelReceiptImage = req.files?.fuelReceiptImage?.[0]?.path || null;
         const transactionImage = req.files?.transactionImage?.[0]?.path || null;
         const tyrePunctureImage = req.files?.tyrePunctureImage?.[0]?.path || null;
+        const otherProblemsImage = req.files?.otherProblemsImage?.[0]?.path || null;
 
         const newCab = new Cab({
             cabNumber,
@@ -74,6 +77,12 @@ exports.addCab = async (req, res) => {
                 requiredService: serviceDetails ? true : false,
                 details: serviceDetails,
             },
+            otherProblems:{
+                image : otherProblemsImage,
+                details: otherProblemsDetails,
+                amount: otherProblemsAmount
+            },
+            Driver
         });
 
         await newCab.save();
@@ -96,3 +105,13 @@ exports.getCabByNumber = async (req, res) => {
         res.status(500).json({ message: "Server Error", error: error.message });
     }
 };
+
+exports.getCabs = async (req, res) => {
+    try {
+        const cabs = await Cab.find().populate("Driver");
+        res.json(cabs);
+    } catch (error) {
+        console.error("❌ Error in getCabs:", error);
+        res.status(500).json({ message: "Server Error", error: error.message });
+    }
+}
