@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   }
-});
+});3
 
 // ✅ Send Email with Password Reset Link
 const sendResetOTP = async (req, res) => {

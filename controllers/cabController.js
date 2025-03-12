@@ -33,9 +33,12 @@
 //         res.json(cab);
 //     } catch (error) {
 //         console.error("❌ Error in getCabByNumber:", error);
+//         console.error(" Error in getCabByNumber:", error);
 //         res.status(500).json({ message: "Server Error", error: error.message });
 //     }
 // };
+
+
 
 
 const Cab = require("../models/Cab");
@@ -69,29 +72,55 @@ const getCabById = async (req, res) => {
 // @route   POST /api/cabs
 const addCab = async (req, res) => {
   try {
-    const { cabNumber, location, fuel, fastTag, tyrePuncture, vehicleServicing } = req.body;
+      const {
+          cabNumber, from, to, totalDistance, fuelType, fuelAmount,
+          fastTagMode, fastTagAmount, tyreRepairAmount, serviceDetails,
+          Driver, otherProblemsDetails, otherProblemsAmount
+      } = req.body;
 
-    // Handle image uploads
-    const receiptImage = req.files?.receiptImage ? req.files.receiptImage[0].path : null;
-    const transactionImage = req.files?.transactionImage ? req.files.transactionImage[0].path : null;
-    const punctureImage = req.files?.punctureImage ? req.files.punctureImage[0].path : null;
+      // Ensure file uploads are handled correctly
+      const fuelReceiptImage = req.files?.fuelReceiptImage?.[0]?.path || null;
+      const transactionImage = req.files?.transactionImage?.[0]?.path || null;
+      const tyrePunctureImage = req.files?.tyrePunctureImage?.[0]?.path || null;
+      const otherProblemsImage = req.files?.otherProblemsImage?.[0]?.path || null;
 
-    const newCab = new Cab({
-      cabNumber,
-      location,
-      fuel: { ...fuel, receiptImage, transactionImage },
-      fastTag,
-      tyrePuncture: { ...tyrePuncture, image: punctureImage },
-      vehicleServicing,
-    });
+      const newCab = new Cab({
+          cabNumber,
+          location: { from, to, totalDistance: totalDistance || null },
+          fuel: {
+              type: fuelType,
+              amount: fuelAmount,
+              receiptImage: fuelReceiptImage,
+              transactionImage: transactionImage,
+          },
+          fastTag: {
+              paymentMode: fastTagMode,
+              amount: fastTagAmount,
+          },
+          tyrePuncture: {
+              image: tyrePunctureImage,
+              repairAmount: tyreRepairAmount,
+          },
+          vehicleServicing: {
+              requiredService: serviceDetails ? true : false,
+              details: serviceDetails,
+          },
+          otherProblems:{
+              image : otherProblemsImage,
+              details: otherProblemsDetails,
+              amount: otherProblemsAmount
+          },
+          Driver
+      });
 
-    await newCab.save();
-    res.status(201).json({ message: "Cab added successfully", cab: newCab });
+      await newCab.save();
+      console.log("✅ Cab added successfully:", newCab);
+      res.status(201).json({ message: "Cab added successfully", cab: newCab });
   } catch (error) {
-    res.status(500).json({ message: "Error adding cab", error });
+      console.error("❌ Error in addCab:", error);
+      res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
-
 // @desc    Update cab details
 // @route   PUT /api/cabs/:id
 const updateCab = async (req, res) => {
@@ -127,57 +156,28 @@ const deleteCab = async (req, res) => {
   }
 };
 
-const filterDate =  async (req, res) => {
-  try {
-    const { fromDate, toDate } = req.query;
 
-    // Check if fromDate or toDate is missing
-    if (!fromDate || !toDate) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide fromDate and toDate'
-      });
-    }
 
-    // Convert fromDate and toDate to ignore time
-    const startDate = new Date(fromDate);
-    const endDate = new Date(toDate);
+module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab};
 
-    // Set time to 00:00:00 for fromDate
-    startDate.setHours(0, 0, 0, 0);
-    // Set time to 23:59:59 for toDate
-    endDate.setHours(23, 59, 59, 999);
+// exports.getCabByNumber = async (req, res) => {
+//     try {
+//         const cab = await Cab.findOne({ cabNumber: req.params.cabNo }).populate("Driver");
+//         if (!cab) return res.status(404).json({ message: "Cab not found" });
 
-    // Query to filter the cabs based on date (ignoring time)
-    const cabs = await Cab.find({
-      'location.dateTime': {
-        $gte: startDate,
-        $lte: endDate
-      }
-    });
+//         res.json(cab);
+//     } catch (error) {
+//         console.error("❌ Error in getCabByNumber:", error);
+//         res.status(500).json({ message: "Server Error", error: error.message });
+//     }
+// };
 
-    // Check if cabs found or not
-    if (cabs.length === 0) {
-      return res.status(200).json({
-        success: false,
-        message: 'No cabs found in the provided date range'
-      });
-    }
-
-    // Send response if cabs are found
-    res.status(200).json({
-      success: true,
-      message: 'Cabs fetched successfully',
-      cabs: cabs
-    });
-
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal Server Error'
-    });
-  }
-};
-
-module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab, filterDate };
+// exports.getCabs = async (req, res) => {
+//     try {
+//         const cabs = await Cab.find().populate("Driver");
+//         res.json(cabs);
+//     } catch (error) {
+//         console.error("❌ Error in getCabs:", error);
+//         res.status(500).json({ message: "Server Error", error: error.message });
+//     }
+// }
