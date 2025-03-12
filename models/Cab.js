@@ -1,74 +1,35 @@
 
-// const mongoose = require("mongoose");
-// const CabSchema = new mongoose.Schema({
-//     cabNo: { type: String, unique: true },
-//     tripDate: { type: Date, default: Date.now },
-//     // tripDate: { type: String, required: true, default: Date.now() },
-//     toFrom: { type: String },
-//     fuelDetails: { type: String },
-//     fastTagDetails: { type: String },
-//     tyrePunctureDetails: { type: String },
-//     Driver:{type: mongoose.Schema.Types.ObjectId, ref: 'Driver'},
-//     // licenseNumber: { type: String, required: true },
-
-// });
-
-// module.exports = mongoose.model("Cab", CabSchema);
-
 const mongoose = require("mongoose");
 
 const CabSchema = new mongoose.Schema({
-    cabNumber: {
-        type: String,
-        required: true,  // Prevents null values
-        unique: true,
-    },
-    location: {
-        from: { type: String, required: true }, // Starting location
-        to: { type: String, required: true }, // Destination location
-        dateTime: { type: Date, default: Date.now }, // Auto-captured date & time
-        totalDistance: { type: Number, required: false }, // Total calculated distance
+    cabNumber: { type: String, required: true },
+    location: {from: String,to: String,
+        totalDistance: { type: Number, required: true }
     },
     fuel: {
-        type: {
-            type: String,
-            enum: ["Cash", "Card"], // Payment types
-            required: true,
-        },
-        receiptImage: { type: String }, // Image URL or file path
-        transactionImage: { type: String }, // Image URL or file path (for Card)
-        amount: { type: Number, required: true },
+        type: String,
+        amount: Number,
+        receiptImage: String,
+        transactionImage: String
     },
     fastTag: {
-        paymentMode: {
-            type: String,
-            enum: ["Online Deduction", "Cash", "Card"], // FastTag payment modes
-            required: true,
-        },
-        amount: { type: Number },
-        cardDetails: { type: String },
+        paymentMode: String,
+        amount: Number
     },
     tyrePuncture: {
-        image: { type: String }, // Image of puncture
-        repairAmount: { type: Number },
+        image: String,
+        repairAmount: Number
     },
     vehicleServicing: {
-        requiredService: { type: Boolean, default: false }, // Whether servicing is required
-        details: { type: String }, // Details based on distance
+        requiredService: Boolean,
+        details: String
     },
-
-    otherProblems:{
-        image :{ type: String }, // Image of other problems
-        details: { type: String }, // Details of other problems
-        amount: { type: Number }, // Amount spent on other problems
+    otherProblems: {
+        image: String,
+        details: String,
+        amount: Number
     },
+    Driver: { type: mongoose.Schema.Types.ObjectId, ref: "Driver" }, // Reference to Driver Model
+}, { timestamps: true });
 
-    Driver: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Driver'
-    }
-});
-
-const Cab = mongoose.model("Cab", CabSchema);
-
-module.exports = Cab;
+module.exports = mongoose.model("Cab", CabSchema);
