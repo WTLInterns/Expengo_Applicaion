@@ -8,7 +8,7 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "profile_pictures", // Change folder name as needed
     format: async (req, file) => "png", // Auto-convert to PNG
-    public_id: (req, file) => Date.now(), // Unique file name
+    public_id: (req, file) => `${Date.now()}-${file.originalname}`, // Unique file name
   },
 });
 

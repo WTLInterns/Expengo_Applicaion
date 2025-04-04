@@ -1,28 +1,11 @@
-
-// const mongoose = require("mongoose");
-// const CabSchema = new mongoose.Schema({
-//     cabNo: { type: String, unique: true },
-//     tripDate: { type: Date, default: Date.now },
-//     // tripDate: { type: String, required: true, default: Date.now() },
-//     toFrom: { type: String },
-//     fuelDetails: { type: String },
-//     fastTagDetails: { type: String },
-//     tyrePunctureDetails: { type: String },
-//     Driver:{type: mongoose.Schema.Types.ObjectId, ref: 'Driver'},
-//     // licenseNumber: { type: String, required: true },
-
-// });
-
-// module.exports = mongoose.model("Cab", CabSchema);
-
 const mongoose = require("mongoose");
 
 const CabSchema = new mongoose.Schema({
     cabNumber: {
-        type: String,
-        required: true,  // Prevents null values
-        unique: true,
+       type:mongoose.Schema.Types.ObjectId,
+       ref:'CabDetails'
     },
+      
     location: {
         from: { type: String, required: true }, // Starting location
         to: { type: String, required: true }, // Destination location
@@ -57,17 +40,79 @@ const CabSchema = new mongoose.Schema({
         details: { type: String }, // Details based on distance
     },
 
-    otherProblems:{
-        image :{ type: String }, // Image of other problems
+    otherProblems: {
+        image: { type: String }, // Image of other problems
         details: { type: String }, // Details of other problems
         amount: { type: Number }, // Amount spent on other problems
     },
-
     Driver: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Driver" }, // Reference to Driver Model
-    }, { timestamps: true });    
-    
+        ref: "Driver"
+    }, // Reference to Driver Model
+    addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+}, { timestamps: true });
+
 const Cab = mongoose.model("Cab", CabSchema);
 
 module.exports = Cab;
+
+
+
+
+
+// const mongoose = require("mongoose");
+
+// const CabSchema = new mongoose.Schema({
+//     cabNumber: {
+//         type: String, // ✅ Change from ObjectId to String
+//         required: true, // ✅ Ensure it's required
+//         unique: true, // ✅ Prevent duplicate cab numbers
+//     },
+//     location: {
+//         from: { type: String, required: true },
+//         to: { type: String, required: true },
+//         dateTime: { type: Date, default: Date.now },
+//         totalDistance: { type: Number },
+//     },
+//     fuel: {
+//         type: {
+//             type: String,
+//             enum: ["Cash", "Card"],
+//             required: true,
+//         },
+//         receiptImage: { type: String },
+//         transactionImage: { type: String },
+//         amount: { type: Number, required: true },
+//     },
+//     fastTag: {
+//         paymentMode: {
+//             type: String,
+//             enum: ["Online Deduction", "Cash", "Card"],
+//             required: true,
+//         },
+//         amount: { type: Number },
+//         cardDetails: { type: String },
+//     },
+//     tyrePuncture: {
+//         image: { type: String },
+//         repairAmount: { type: Number },
+//     },
+//     vehicleServicing: {
+//         requiredService: { type: Boolean, default: false },
+//         details: { type: String },
+//     },
+//     otherProblems: {
+//         image: { type: String },
+//         details: { type: String },
+//         amount: { type: Number },
+//     },
+//     driver: { // ✅ Ensure correct casing
+//         type: mongoose.Schema.Types.ObjectId,
+//         ref: "Driver",
+//     },
+//     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+// }, { timestamps: true });
+
+// const Cab = mongoose.model("Cab", CabSchema);
+
+// module.exports = Cab;
