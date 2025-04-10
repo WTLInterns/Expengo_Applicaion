@@ -15,7 +15,7 @@ const {
   totalCab,
   getAllExpenses
 } = require("../controllers/adminController");
-const { sendSubAdminEmail,loginSubAdmin } = require("../controllers/emailController");
+const { sendSubAdminEmail, loginSubAdmin } = require("../controllers/emailController");
 const upload = require("../middleware/uploadMiddleware");
 const { getAnalytics, addAnalytics } = require("../controllers/adminController");
 
@@ -33,15 +33,15 @@ router.get("/getExpense", getAllExpenses);
 // router.post("/addNewSubAdmin", addNewSubAdmin);
 
 router.get("/getAllSubAdmins", getAllSubAdmins);
-router.post("/addNewSubAdmin", upload.single("profileImage"), addNewSubAdmin);
+router.post("/addNewSubAdmin", upload.fields([{ name: "profileImage", maxCount: 1 },{ name: "companyLogo", maxCount: 1 },{name: "signature", maxCount: 1}]), addNewSubAdmin);
 router.get("/getSubAdmin/:id", getSubAdminById);
 router.put("/updateSubAdmin/:id", updateSubAdmin);
 router.delete("/deleteSubAdmin/:id", deleteSubAdmin);
 router.put("/toggle-block/:id", toggleBlockStatus);
 
 
-router.post("/send",sendSubAdminEmail);
-router.post("/login",loginSubAdmin);
+router.post("/send", sendSubAdminEmail);
+router.post("/login", loginSubAdmin);
 
 
 

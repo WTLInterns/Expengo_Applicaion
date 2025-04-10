@@ -28,7 +28,7 @@ exports.isSuperAdmin = async (req, res, next) => {
 
 // Role-Based Middleware (Admin Access Control)
 exports.isAdmin = async (req, res, next) => {
-  if (req.admin.role !== "admin" && req.admin.role !== "superadmin") {
+  if (req.admin.role !== "Admin" && req.admin.role !== "superadmin") {
     return res.status(403).json({ message: "Access Denied: Admins Only" });
   }
   next();

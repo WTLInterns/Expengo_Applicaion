@@ -6,6 +6,19 @@ const Driver = require("../models/loginModel");
 require("dotenv").config();
 const Expense = require("../models/subAdminExpenses");
 const Analytics = require("../models/SubadminAnalytics");
+const nodemailer = require("nodemailer");
+const crypto = require('crypto');
+
+
+// ✅ Configure Nodemailer
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 
 // ✅ Register Admin
 const registerAdmin = async (req, res) => {
@@ -124,23 +137,40 @@ const getAllSubAdmins = async (req, res) => {
   }
 };
 
-// Add a new sub-admin
+
+
+// Invoice number generator
+const generateInvoiceNumber = (subadminName) => {
+  if (!subadminName) return "NA-000000";
+
+  const namePrefix = subadminName.trim().split(" ").map((word) => word[0]).join("").toUpperCase().slice(0, 3); // E.g., Radiant IT Service → RIS
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear() % 100;
+  const nextYear = (now.getFullYear() + 1) % 100;
+  const financialYear =currentMonth >= 4 ? `${currentYear}${nextYear}` : `${(currentYear - 1).toString().padStart(2, "0")}${currentYear}`;
+  const randomNumber = Math.floor(100000 + Math.random() * 900000);
+  return `${namePrefix}${financialYear}-${randomNumber}`;
+};
+
+// Controller to add a new sub-admin
 const addNewSubAdmin = async (req, res) => {
   try {
-    const { name, email, password, role, phone, status } = req.body;
-    const profileImage = req.file?.path || null;
+    const { name, email, role, phone, status, companyInfo } = req.body;
 
-    console.log("Image From Frontend:", profileImage);
+    const profileImage = req.files?.profileImage?.[0]?.path || null;
+    const companyLogo = req.files?.companyLogo?.[0]?.path || null;
+    const signature = req.files?.signature?.[0]?.path || null;
 
-    // Validate required fields
-    if (!name || !email || !password || !role || !phone) {
+    // Basic validation
+    if (!name || !email || !role || !phone || !companyInfo) {
       return res.status(400).json({
         success: false,
-        message: "All required fields must be provided",
+        message: "All required fields must be provided.",
       });
     }
 
-    // Check if email already exists
+    // Check for existing email
     const existingSubAdmin = await Admin.findOne({ email });
     if (existingSubAdmin) {
       return res.status(400).json({
@@ -149,21 +179,53 @@ const addNewSubAdmin = async (req, res) => {
       });
     }
 
-    // ✅ Hash the password before saving
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Generate and hash password
+    const generatedPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
-    // Create and save new sub-admin
+    // Create subadmin
     const newSubAdmin = await Admin.create({
       profileImage,
       name,
       email,
-      password: hashedPassword, // ✅ Store hashed password
+      password: hashedPassword,
       role,
       phone,
       status: status || "Active",
+      companyLogo,
+      companyInfo,
+      signature,
     });
 
-    // Remove password before sending response
+    // Optionally generate invoice number (if needed for display or testing)
+    const invoiceNumber = generateInvoiceNumber(subadmin.name); // ✅ Correct
+    console.log("Generated Invoice:", generateInvoiceNumber(subadmin.name));
+
+    // Send welcome email
+    const mailOptions = {
+      from: `"WTL Tourism Pvt. Ltd." <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Welcome to WTL Tourism - Sub-Admin Account Created",
+      html: `
+        <div style="max-width: 600px; margin: auto; font-family: Arial, sans-serif;">
+          <div style="text-align: center; padding-bottom: 20px;">
+            ${companyLogo ? `<img src="${companyLogo}" alt="Company Logo" style="max-width: 120px;">` : ""}
+          </div>
+          <h2 style="text-align: center; color: #333;">Sub-Admin Account Created</h2>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Password:</strong> ${generatedPassword}</p>
+          <p>Please log in and change your password after first login.</p>
+          <br>
+          <div style="text-align: center;">
+            <a href="https://your-frontend-login-url.com" style="background: #007BFF; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Login Now</a>
+          </div>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    // Return response without password
     const { password: _, ...subAdminResponse } = newSubAdmin.toObject();
 
     return res.status(201).json({
@@ -180,6 +242,7 @@ const addNewSubAdmin = async (req, res) => {
     });
   }
 };
+
 
 // Get a single sub-admin by ID
 const getSubAdminById = async (req, res) => {
@@ -202,58 +265,6 @@ const getSubAdminById = async (req, res) => {
     });
   }
 };
-
-// Update a sub-admin
-// const updateSubAdmin = async (req, res) => {
-//     try {
-//       const { name, email, password, role, phone, status } = req.body
-//       const subAdminId = req.params.id
-
-//       // Check if email is being changed and if it already exists
-//       if (email) {
-//         const existingSubAdmin = await Admin.findOne({ email, _id: { $ne: subAdminId } })
-//         if (existingSubAdmin) {
-//           return res.status(400).json({ success: false, message: "Email already in use by another sub-admin" })
-//         }
-//       }
-
-//       // Prepare update data
-//       const updateData = {
-//         profileImage,
-//         name,
-//         email,
-//         role,
-//         phone,
-//         status,
-//       }
-
-//       // Only update password if provided
-//       if (password) {
-//         const salt = await bcrypt.genSalt(10)
-//         updateData.password = await bcrypt.hash(password, salt)
-//       }
-
-//       // Update sub-admin
-//       const updatedSubAdmin = await Admin.findByIdAndUpdate(
-//         subAdminId,
-//         { $set: updateData },
-//         { new: true, runValidators: true },
-//       ).select("-password")
-
-//       if (!updatedSubAdmin) {
-//         return res.status(404).json({ success: false, message: "Sub-admin not found" })
-//       }
-
-//       res.status(200).json({
-//         success: true,
-//         message: "Sub-admin updated successfully",
-//         subAdmin: updatedSubAdmin,
-//       })
-//     } catch (error) {
-//       console.error("Error updating sub-admin:", error)
-//       res.status(500).json({ success: false, message: "Failed to update sub-admin", error: error.message })
-//     }
-//   }
 
 const updateSubAdmin = async (req, res) => {
   try {
@@ -323,29 +334,45 @@ const updateSubAdmin = async (req, res) => {
   }
 };
 
-// Delete a sub-admin
 const deleteSubAdmin = async (req, res) => {
   try {
+    // Find and delete the sub-admin
     const deletedSubAdmin = await Admin.findByIdAndDelete(req.params.id);
 
     if (!deletedSubAdmin) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Sub-admin not found" });
+      return res.status(404).json({ success: false, message: "Sub-admin not found" });
     }
 
-    res
-      .status(200)
-      .json({ success: true, message: "Sub-admin deleted successfully" });
+    // Delete related cabs and drivers (assuming cab and driver are related to sub-admin)
+    const deletedCabs = await Cab.deleteMany({ addedBy: req.params.id }); // Modify based on your schema
+    const deletedDrivers = await Driver.deleteMany({ addedBy: req.params.id }); // Modify based on your schema
+
+    // Check if related cabs and drivers are deleted
+    const relatedDataDeleted = deletedCabs.deletedCount > 0 || deletedDrivers.deletedCount > 0;
+
+    // If no related cabs or drivers are deleted, it's still fine to delete the sub-admin
+    if (!relatedDataDeleted) {
+      console.log("No related cabs or drivers found, but sub-admin was still deleted.");
+    }
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Sub-admin and related cabs and drivers deleted successfully, if any",
+      deletedSubAdmin,
+      deletedCabs,
+      deletedDrivers
+    });
   } catch (error) {
     console.error("Error deleting sub-admin:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to delete sub-admin",
+      message: "Failed to delete sub-admin and related data",
       error: error.message,
     });
   }
 };
+
 
 // Toggle block status
 const toggleBlockStatus = async (req, res) => {
@@ -369,9 +396,8 @@ const toggleBlockStatus = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Sub-admin ${
-        newStatus === "Active" ? "activated" : "deactivated"
-      } successfully`,
+      message: `Sub-admin ${newStatus === "Active" ? "activated" : "deactivated"
+        } successfully`,
       status: newStatus,
       subAdmin: updatedSubAdmin,
     });

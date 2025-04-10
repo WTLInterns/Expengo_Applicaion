@@ -116,7 +116,53 @@ const unassignCab = async (req, res) => {
 };
 
 
+const getAssignDriver = async (req, res) => {
+    try {
+        const driverId = req.driver.id; // Get the logged-in driver's ID
+        console.log("✅ Driver ID:", driverId);
+
+        // Fetch all cab assignments, populate cab details
+        const assignments = await CabAssignment.find({ driver: driverId })
+            .populate("cab")
+            .populate("driver");
+
+        console.log("🔍 Assigned Cabs for Driver:", assignments);
+
+        if (!assignments.length) {
+            return res.status(404).json({ message: "No assigned cabs found for this driver." });
+        }
+
+        res.status(200).json(assignments);
+    } catch (error) {
+        console.error("❌ Error in getAssignCab:", error);
+        res.status(500).json({ message: "Server Error", error: error.message || error });
+    }
+};
 
 
+const EditDriverProfile =  async (req, res) => {
+    try {
+        const driverId = req.driver.id; // Get authenticated driver ID from middleware
 
-module.exports = { assignCab, getAssignCab, unassignCab }
+        // Check if the driver is updating their own profile
+     
+
+        // Update the driver profile
+        const updatedDriver = await Driver.findByIdAndUpdate(req.driver.id, req.body, {
+            new: true,
+            runValidators: true
+        }).select("-password");
+       
+        if (!updatedDriver) {
+            return res.status(404).json({ message: "Driver not found" });
+        }
+
+        res.json({ message: "Profile updated successfully", updatedDriver });
+    } catch (err) {
+        console.error("❌ Error updating driver profile:", err);
+        res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+
+module.exports = { assignCab, getAssignCab, unassignCab ,EditDriverProfile,getAssignDriver}

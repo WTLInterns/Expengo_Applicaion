@@ -3,7 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
-const { Resend } = require("resend");  
+const { Resend } = require("resend");
 const Driver = require("../models/loginModel");
 require("dotenv").config();
 
@@ -13,7 +13,9 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const registerUser = async (req, res) => {
   try {
     const { name, email, phone, licenseNo, adharNo, addedBy } = req.body;
-    const profileImage = req.file ? req.file.path : "";
+    const profileImage = req.files?.profileImage?.[0]?.path || "";
+    const licenseNoImage = req.files?.licenseNoImage?.[0]?.path || "";
+    const adharNoImage = req.files?.adharNoImage?.[0]?.path || "";
 
     if (!name?.trim() || !email?.trim() || !phone?.trim() || !licenseNo?.trim() || !adharNo?.trim()) {
       return res.status(400).json({ error: "All fields are required" });
@@ -35,17 +37,19 @@ const registerUser = async (req, res) => {
 
     // ✅ Generate a secure random password
     const generatedPassword = Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+    // const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
     // ✅ Create driver
     const newDriver = new Driver({
       name,
       email,
-      password: hashedPassword,  // 🔒 Store hashed password
+      password: generatedPassword,  // 🔒 Store hashed password
       phone,
       licenseNo,
       adharNo,
       profileImage,
+      licenseNoImage,
+      adharNoImage,
       addedBy,
     });
 
@@ -53,38 +57,44 @@ const registerUser = async (req, res) => {
 
     // ✅ Send login details via Resend API
     await resend.emails.send({
-      
-        from: `"WTL Tourism Pvt. Ltd." <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Welcome to WTL Tourism - Driver Account Created",
-        html: `
-          <div style="max-width: 600px; margin: auto; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #f9f9f9;">
-            <div style="text-align: center; padding-bottom: 20px;">
-              <img src="https://your-logo-url.com/logo.png" alt="WTL Tourism Logo" style="max-width: 150px;">
-            </div>
-            <div style="background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #333; text-align: center;">Welcome to WTL Tourism</h2>
-              <p style="color: #555; font-size: 16px;">Dear Driver,</p>
-              <p style="color: #555; font-size: 16px;">Your driver account has been created successfully. Below are your login details:</p>
-              <div style="background: #f3f3f3; padding: 15px; border-radius: 5px; font-size: 16px;">
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Password:</strong> ${generatedPassword}</p>
-              </div>
-              <p style="color: #555; font-size: 16px;">For security reasons, please log in and change your password immediately.</p>
-              <div style="text-align: center; margin: 20px 0;">
-                <a href="https://your-login-url.com" style="display: inline-block; padding: 12px 20px; font-size: 16px; color: #ffffff; background: #007BFF; text-decoration: none; border-radius: 5px;">Log in Now</a>
-              </div>
-              <p style="color: #777; font-size: 14px; text-align: center;">If you did not request this account, please ignore this email.</p>
-            </div>
-            <div style="text-align: center; margin-top: 20px; font-size: 14px; color: #777;">
-              <p>Best Regards, <br><strong>WTL Tourism Pvt. Ltd.</strong></p>
-              <p style="font-size: 12px;">123 Street, City, Country | contact@worldtriplink.com</p>
-            </div>
-          </div>
-        `,
-      
-    });
 
+      from: `"WTL Tourism Pvt. Ltd." <contact@worldtriplink.com>`,
+      to: email,
+      subject: "Welcome to WTL Tourism - Driver Account Created",
+      html: `
+        <div style="max-width: 600px; margin: auto; font-family: Arial, sans-serif; border: 1px solid #ddd; border-radius: 10px; padding: 20px; background-color: #f5f7fa;">
+      <div style="display: flex; justify-content: center; padding-bottom: 15px;">
+            <img src="https://media.licdn.com/dms/image/v2/D4D03AQGliPQEWM90Ag/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1732192083386?e=2147483647&v=beta&t=jZaZ72VS6diSvadKUEgQAOCd_0OKpVbeP44sEOrh-Og" alt="WTL Tourism Logo" style="max-width: 100px; height: auto;" />
+          </div>
+          <div style="background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0px 2px 12px rgba(0, 0, 0, 0.08);">
+            <h2 style="color: #007BFF; text-align: center; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">Welcome to WTL Tourism</h2>
+            <p style="color: #444; font-size: 16px;">Dear ${name},</p>
+            <p style="color: #444; font-size: 16px;">Your driver account has been created successfully. Below are your login details:</p>
+            
+            <div style="background: #f2f4f6; padding: 15px; border-radius: 6px; font-size: 16px; margin: 20px 0;">
+              <p><strong>Email:</strong> <span style="font-family: 'Courier New', Courier, monospace;">${email}</span></p>
+              <p><strong>Password:</strong> <span style="font-family: 'Courier New', Courier, monospace;">${generatedPassword}</span></p>
+            </div>
+    
+            <p style="color: #444; font-size: 16px;">For security reasons, please log in and change your password immediately.</p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="https://your-login-url.com"
+                style="display: inline-block; padding: 12px 25px; font-size: 16px; font-weight: bold; color: #fff; background: linear-gradient(135deg,rgb(23, 125, 213),rgb(172, 218, 255)); text-decoration: none; border-radius: 6px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; color:black">
+                Log in Now
+              </a>
+            </div>
+    
+            <p style="color: #777; font-size: 14px; text-align: center;">If you did not request this account, please ignore this email.</p>
+          </div>
+    
+          <div style="text-align: center; margin-top: 25px; font-size: 14px; color: #888;">
+            <p>Best Regards,<br><strong>WTL Tourism Pvt. Ltd.</strong></p>
+            <p style="font-size: 13px;">123 Street, City, Country | contact@worldtriplink.com</p>
+          </div>
+        </div>
+      `,
+    });
     res.status(201).json({
       message: "User registered successfully. Password sent to email.",
       user: {
@@ -95,6 +105,8 @@ const registerUser = async (req, res) => {
         licenseNo: newDriver.licenseNo,
         adharNo: newDriver.adharNo,
         profileImage: newDriver.profileImage,
+        licenseNoImage: newDriver.licenseNoImage,
+        adharNoImage: newDriver.adharNoImage,
         addedBy: newDriver.addedBy,
         createdAt: newDriver.createdAt,
       },
