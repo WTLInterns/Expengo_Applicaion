@@ -1,126 +1,146 @@
+
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken");
-const User = require("../models/Admin"); // ✅ Import User model
+const { Resend } = require("resend"); // ✅ Correct import
+const User = require("../models/Admin");
 require("dotenv").config();
 
-// ✅ Configure Nodemailer
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});3
+const resend = new Resend(process.env.RESEND_API_KEY); // ✅ Instance
 
-// ✅ Send Email with Password Reset Link
-const sendResetOTP = async (req, res) => {
+// Generate a random 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Send OTP via Email
+const sendOTP = async (req, res) => {
   const { email } = req.body;
   if (!email) {
-    return res.status(401).json({ message: 'Email is required' });
+    return res.status(400).json({ message: "Email is required" });
   }
 
-  console.log('Received email:', email);
-
   try {
-    const userFind = await User.findOne({ email: email });
-    if (!userFind) {
+    const user = await User.findOne({ email });
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ Generate Token
-    const token = jwt.sign({ _id: userFind._id }, process.env.JWT_SECRET, { expiresIn: "2m" });
+    const otp = generateOTP();
 
-    // ✅ Save Token in Database
-    const setusertoken = await User.findByIdAndUpdate(
-      userFind._id, // ✅ Correct way to pass ID
-      { verifyToken: token }, 
-      { new: true } // ✅ Ensures the updated user document is returned
-    );
+    // Set OTP expiry to 10 minutes from now
+    const otpExpiry = new Date();
+    otpExpiry.setMinutes(otpExpiry.getMinutes() + 10);
 
-    console.log("Generated Token:", token);
-    console.log("Updated Token in DB:", setusertoken?.verifyToken);
-
-    // ✅ Construct the reset link
-    const resetToken = setusertoken?.verifyToken || token;
-    const resetLink = `http://localhost:3000/forgotPassword/${userFind._id}/${resetToken}`;
-
-    console.log("Reset Link:", resetLink);
-
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Password Reset Request",
-      text: `Click on this link to reset your password: ${resetLink}`
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.log("Email sending error:", error);
-        return res.status(500).json({ status: 500, message: "Email not sent" });
-      } else {
-        console.log("Email sent:", info.response);
-        return res.status(200).json({ status: 200, message: "Email sent Successfully" });
-      }
+    // Save OTP and expiry
+    await User.findByIdAndUpdate(user._id, {
+      resetOTP: otp,
+      resetOTPExpiry: otpExpiry,
     });
 
+    // Send OTP email
+    await resend.emails.send({
+      from: `"WTL Tourism Pvt. Ltd." <contact@worldtriplink.com>`,
+      to: email,
+      subject: "Password Reset OTP",
+      html: `
+        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ddd; border-radius: 10px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <img src="https://media.licdn.com/dms/image/v2/D4D03AQGliPQEWM90Ag/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1732192083386?e=2147483647&v=beta&t=jZaZ72VS6diSvadKUEgQAOCd_0OKpVbeP44sEOrh-Og" alt="WTL Tourism Pvt. Ltd." style="max-width: 130px;" />
+          </div>
+          <h2 style="color: #2c3e50; text-align: center;">Password Reset Request</h2>
+          <p style="color: #555; font-size: 16px; line-height: 1.6;">
+            You recently requested to reset your password for your account. Use the following One-Time Password (OTP) to complete your request:
+          </p>
+          <div style="background-color: #f0f4f8; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; color: #1e90ff; letter-spacing: 10px; border-radius: 8px; margin: 20px 0;">
+            ${otp}
+          </div>
+          <p style="color: #555; font-size: 16px;">
+            <strong >Note:</strong> This OTP will expire in <strong>2 minutes</strong>.
+          </p>
+          <p style="color: #999; font-size: 14px; margin-top: 30px;">
+            If you didn’t request this, please ignore this email. For further assistance, feel free to reach out to our support team.
+          </p>
+          <hr style="margin: 40px 0; border: none; border-top: 1px solid #eee;" />
+          <p style="color: #aaa; font-size: 12px; text-align: center;">
+            © 2025 WTL Tourism Pvt. Ltd. All rights reserved.<br />
+            <a href="<contact@worldtriplink.com>" style="color: #1e90ff; text-decoration: none;">www.worldtriplink.com</a>
+          </p>
+        </div>
+      `,
+    });
+    
+
+    return res.status(200).json({ message: "OTP sent successfully to your email" });
   } catch (error) {
-    console.error("Error in sendResetOTP:", error);
-    return res.status(500).json({ status: 500, message: "Internal Server Error" });
+    console.error("Error in sendOTP:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-// ✅ Verify User Token for Forgot Password
-const forgotPassword = async (req, res) => {
-  const { id, token } = req.params;
+// Verify OTP
+const verifyOTP = async (req, res) => {
+  const { email, otp } = req.body
+
+  if (!email || !otp) {
+    return res.status(400).json({ message: "Email and OTP are required" })
+  }
 
   try {
-    const validUser = await User.findOne({ _id: id, verifyToken: token });
-    if (!validUser) {
-      return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({ email })
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
     }
 
-    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
-    if (!verifyToken) {
-      return res.status(401).json({ message: "Invalid or expired token" });
+    // Check if OTP matches and is not expired
+    if (user.resetOTP !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" })
     }
 
-    res.status(200).json({ status: 200, validUser });
+    if (new Date() > new Date(user.resetOTPExpiry)) {
+      return res.status(400).json({ message: "OTP has expired. Please request a new one." })
+    }
+
+    // OTP is valid, allow user to reset password
+    return res.status(200).json({ message: "OTP verified successfully" })
   } catch (error) {
-    console.error("Error in forgotPassword:", error);
-    return res.status(500).json({ status: 500, error });
+    console.error("Error in verifyOTP:", error)
+    return res.status(500).json({ message: "Internal Server Error" })
   }
-};
+}
 
-// ✅ Change Password
-const changePassword = async (req, res) => {
-  const { id, token } = req.params;
-  const { password } = req.body;
+// Reset Password
+const resetPassword = async (req, res) => {
+  const { email, password } = req.body
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" })
+  }
 
   try {
-    const validUser = await User.findOne({ _id: id, verifyToken: token });
-    if (!validUser) {
-      return res.status(404).json({ message: "User not found" });
+    const user = await User.findOne({ email })
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
     }
 
-    const verifyToken = jwt.verify(token, process.env.JWT_SECRET);
-    if (!verifyToken) {
-      return res.status(401).json({ message: "Invalid or expired token" });
-    }
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(password, 12)
 
-    // ✅ Hash Password
-    const newPassword = await bcrypt.hash(password, 12);
+    // Update password and clear OTP fields
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        password: hashedPassword,
+        resetOTP: null,
+        resetOTPExpiry: null,
+      },
+      { new: true },
+    )
 
-    // ✅ Update Password and Remove Token
-    await User.findByIdAndUpdate(id, { password: newPassword, verifyToken: null });
-
-    res.status(200).json({ status: 200, message: "Password changed successfully" });
-
+    return res.status(200).json({ message: "Password reset successful" })
   } catch (error) {
-    console.error("Error in changePassword:", error);
-    return res.status(500).json({ status: 500, error });
+    console.error("Error in resetPassword:", error)
+    return res.status(500).json({ message: "Internal Server Error" })
   }
-};
+}
 
-// ✅ Export Functions
-module.exports = { sendResetOTP, forgotPassword, changePassword };
+module.exports = { sendOTP, verifyOTP, resetPassword }

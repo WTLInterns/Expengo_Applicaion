@@ -20,7 +20,7 @@ const CabSchema = new mongoose.Schema({
         },
         receiptImage: { type: String }, // Image URL or file path
         transactionImage: { type: String }, // Image URL or file path (for Card)
-        amount: { type: Number, required: true },
+        amount: { type: [Number], required: true },
     },
     fastTag: {
         paymentMode: {
@@ -28,23 +28,27 @@ const CabSchema = new mongoose.Schema({
             enum: ["Online Deduction", "Cash", "Card"], // FastTag payment modes
             required: true,
         },
-        amount: { type: Number },
+        amount: { type: [Number] },
         cardDetails: { type: String },
     },
     tyrePuncture: {
         image: { type: String }, // Image of puncture
-        repairAmount: { type: Number },
+        repairAmount: { type: [Number] },
     },
+
     vehicleServicing: {
         requiredService: { type: Boolean, default: false }, // Whether servicing is required
         details: { type: String }, // Details based on distance
+        image: { type: String }, // Image path or URL
     },
+    
 
     otherProblems: {
         image: { type: String }, // Image of other problems
         details: { type: String }, // Details of other problems
-        amount: { type: Number }, // Amount spent on other problems
+        amount: { type: [Number] }, // Amount spent on other problems
     },
+    
     Driver: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Driver"
@@ -56,63 +60,3 @@ const Cab = mongoose.model("Cab", CabSchema);
 
 module.exports = Cab;
 
-
-
-
-
-// const mongoose = require("mongoose");
-
-// const CabSchema = new mongoose.Schema({
-//     cabNumber: {
-//         type: String, // ✅ Change from ObjectId to String
-//         required: true, // ✅ Ensure it's required
-//         unique: true, // ✅ Prevent duplicate cab numbers
-//     },
-//     location: {
-//         from: { type: String, required: true },
-//         to: { type: String, required: true },
-//         dateTime: { type: Date, default: Date.now },
-//         totalDistance: { type: Number },
-//     },
-//     fuel: {
-//         type: {
-//             type: String,
-//             enum: ["Cash", "Card"],
-//             required: true,
-//         },
-//         receiptImage: { type: String },
-//         transactionImage: { type: String },
-//         amount: { type: Number, required: true },
-//     },
-//     fastTag: {
-//         paymentMode: {
-//             type: String,
-//             enum: ["Online Deduction", "Cash", "Card"],
-//             required: true,
-//         },
-//         amount: { type: Number },
-//         cardDetails: { type: String },
-//     },
-//     tyrePuncture: {
-//         image: { type: String },
-//         repairAmount: { type: Number },
-//     },
-//     vehicleServicing: {
-//         requiredService: { type: Boolean, default: false },
-//         details: { type: String },
-//     },
-//     otherProblems: {
-//         image: { type: String },
-//         details: { type: String },
-//         amount: { type: Number },
-//     },
-//     driver: { // ✅ Ensure correct casing
-//         type: mongoose.Schema.Types.ObjectId,
-//         ref: "Driver",
-//     },
-//     addedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
-// }, { timestamps: true });
-
-// const Cab = mongoose.model("Cab", CabSchema);
-
-// module.exports = Cab;

@@ -63,6 +63,7 @@ const emailRoutes = require("./routes/adminRoutes.js")
 const adminRoutes = require("./routes/adminRoutes")
 const masterAdmin = require("./routes/masterRoutes")
 const forpassRoutes = require("./routes/forPassRoutes")
+const servicingRoutes = require("./routes/servicing.js")
 
 // Routes of Subadmin
 app.use("/api", loginRoutes)
@@ -72,6 +73,7 @@ app.use("/api/assigncab", cabAssignRoutes)
 app.use("/api/cabDetails", cabDetailsRoutes)
 app.use("/api/admin", adminRoutes)
 app.use("/api/password", forpassRoutes)
+app.use("/api/servicing", servicingRoutes)
 
 //Routes of Driver
 app.use("/api/driver", driverRoutes) 

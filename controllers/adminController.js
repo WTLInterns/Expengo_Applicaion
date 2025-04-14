@@ -43,7 +43,7 @@ const registerAdmin = async (req, res) => {
   }
 };
 
-// ✅ Admin Login
+// ✅ Sub-Admin Login
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -198,12 +198,12 @@ const addNewSubAdmin = async (req, res) => {
     });
 
     // Optionally generate invoice number (if needed for display or testing)
-    const invoiceNumber = generateInvoiceNumber(subadmin.name); // ✅ Correct
-    console.log("Generated Invoice:", generateInvoiceNumber(subadmin.name));
+    const invoiceNumber = generateInvoiceNumber(newSubAdmin.name); // ✅ Correct
+    console.log("Generated Invoice:", generateInvoiceNumber(newSubAdmin.name));
 
     // Send welcome email
     const mailOptions = {
-      from: `"WTL Tourism Pvt. Ltd." <${process.env.EMAIL_USER}>`,
+      from:`"WTL Tourism Pvt. Ltd." <contact@worldtriplink.com>`,
       to: email,
       subject: "Welcome to WTL Tourism - Sub-Admin Account Created",
       html: `

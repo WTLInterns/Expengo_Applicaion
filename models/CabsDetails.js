@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose");
+const { image } = require("../config/cloudinary");
 
 const CabSchema = new mongoose.Schema(
     {
@@ -29,30 +30,31 @@ const CabSchema = new mongoose.Schema(
                 type: String,
                 enum: ["Cash", "Card"], 
             },
-            receiptImage: { type: String }, 
-            transactionImage: { type: String }, 
-            amount: { type: Number, required: false }, // ✅ Made optional
+            receiptImage: { type: [String] }, 
+            transactionImage: { type: [String] }, 
+            amount: { type: [Number], required: false }, // ✅ Made optional
         },
         fastTag: {
             paymentMode: {
                 type: String,
                 enum: ["Online Deduction", "Cash", "Card"], 
             },
-            amount: { type: Number },
+            amount: { type: [Number] },
             cardDetails: { type: String },
         },
         tyrePuncture: {
-            image: { type: String }, 
-            repairAmount: { type: Number },
+            image: { type: [String] }, 
+            repairAmount: { type: [Number] },
         },
         vehicleServicing: {
             requiredService: { type: Boolean, default: false },
             details: { type: String },
+            image: { type: [String] }, // Storing Cloudinary image URL
         },
         otherProblems: {
-            image: { type: String },
+            image: { type: [String] },
             details: { type: String }, 
-            amount: { type: Number },
+            amount: { type: [Number] },
         },
         Driver: {
             type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +63,11 @@ const CabSchema = new mongoose.Schema(
         addedBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Admin",
+        },
+
+        cabDate: {
+            type: Date,
+            default: Date.now,
         },
     },
     { timestamps: true }

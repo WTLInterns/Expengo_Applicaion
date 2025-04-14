@@ -40,162 +40,169 @@ const getCabById = async (req, res) => {
 };
 
 
-// const addCab = async (req, res) => {
-//   try {
-//     console.log("Request Body:", req.body);
-//     console.log("Uploaded Files:", req.files);
-
-//     const {
-//       cabNumber,
-//       location,
-//       totalDistance,
-//       dateTime,
-//       fuel,
-//       fastTag,
-//       tyrePuncture,
-//       vehicleServicing,
-//       otherProblems,
-//       Driver,
-//       addedBy,
-//     } = req.body;
-
-//     // 🔍 Check if fields are strings before parsing
-//     const parsedLocation = typeof location === "string" ? JSON.parse(location) : location;
-//     const parsedFuel = typeof fuel === "string" ? JSON.parse(fuel) : fuel;
-//     const parsedFastTag = typeof fastTag === "string" ? JSON.parse(fastTag) : fastTag;
-//     const parsedTyrePuncture = typeof tyrePuncture === "string" ? JSON.parse(tyrePuncture) : tyrePuncture;
-//     const parsedVehicleServicing = typeof vehicleServicing === "string" ? JSON.parse(vehicleServicing) : vehicleServicing;
-//     const parsedOtherProblems = typeof otherProblems === "string" ? JSON.parse(otherProblems) : otherProblems;
-
-//     // ✅ Ensure uploaded files are handled correctly
-//     const receiptImage = req.files?.receiptImage ? req.files.receiptImage[0].path : null;
-//     const transactionImage = req.files?.transactionImage ? req.files.transactionImage[0].path : null;
-//     const punctureImage = req.files?.punctureImage ? req.files.punctureImage[0].path : null;
-//     const otherProblemsImage = req.files?.otherProblemsImage ? req.files.otherProblemsImage[0].path : null;
-
-//     // ✅ Create new Cab entry
-//     const newCab = new Cab({
-//       cabNumber,
-//       location: {
-//         from: parsedLocation?.from,
-//         to: parsedLocation?.to,
-//         totalDistance,
-//         dateTime,
-//       },
-//       fuel: {
-//         type: parsedFuel?.type,
-//         receiptImage,
-//         transactionImage,
-//         amount: parsedFuel?.amount,
-//       },
-//       fastTag: {
-//         paymentMode: parsedFastTag?.paymentMode,
-//         amount: parsedFastTag?.amount,
-//         cardDetails: parsedFastTag?.cardDetails,
-//       },
-//       tyrePuncture: {
-//         image: punctureImage,
-//         repairAmount: parsedTyrePuncture?.repairAmount,
-//       },
-//       vehicleServicing: {
-//         requiredService: parsedVehicleServicing?.requiredService,
-//         details: parsedVehicleServicing?.details,
-//       },
-//       otherProblems: {
-//         image: otherProblemsImage,
-//         details: parsedOtherProblems?.details,
-//         amount: parsedOtherProblems?.amount,
-//       },
-//       Driver,
-//       addedBy
-//     });
-
-//     // ✅ Save to database
-//     await newCab.save();
-//     res.status(201).json({ message: "Cab added successfully", cab: newCab });
-//   } catch (error) {
-//     console.error("Error adding cab:", error.message);
-//     res.status(500).json({ message: "Error adding cab", error: error.message });
-//   }
-// };
-
-
 
 const addCab = async (req, res) => {
   try {
     console.log("📝 Request Body:", req.body);
     console.log("📂 Uploaded Files:", req.files);
 
-    const { cabNumber, ...restData } = req.body;
+    const {
+      cabNumber,
+      location,
+      totalDistance,
+      dateTime,
+      fuel,
+      fastTag,
+      tyrePuncture,
+      vehicleServicing,
+      otherProblems,
+      Driver,
+      addedBy,
+    } = req.body;
 
     if (!cabNumber) {
       return res.status(400).json({ message: "Cab number is required" });
     }
 
-    // 🔄 Parse JSON fields if necessary
-    const parsedData = {};
-    Object.keys(restData).forEach((key) => {
-      parsedData[key] =
-        typeof restData[key] === "string" ? JSON.parse(restData[key]) : restData[key];
-    });
+    // Parse JSON strings safely
+    const safeParse = (data) => {
+      try {
+        return typeof data === "string" ? JSON.parse(data) : data;
+      } catch (err) {
+        throw new Error(`Invalid JSON format in field`);
+      }
+    };
 
-    // 🔄 Map uploaded images correctly into a nested structure
+    const parsedLocation = safeParse(location);
+    const parsedFuel = safeParse(fuel);
+    const parsedFastTag = safeParse(fastTag);
+    const parsedTyrePuncture = safeParse(tyrePuncture);
+    const parsedVehicleServicing = safeParse(vehicleServicing);
+    const parsedOtherProblems = safeParse(otherProblems);
+
+    // Uploaded files mapping
     const uploadedImages = {
       fuel: {
-        receiptImage: req.files?.receiptImage ? req.files.receiptImage[0].path : null,
-        transactionImage: req.files?.transactionImage ? req.files.transactionImage[0].path : null,
+        receiptImage: req.files?.receiptImage?.[0]?.path || null,
+        transactionImage: req.files?.transactionImage?.[0]?.path || null,
       },
       tyrePuncture: {
-        image: req.files?.tyrePunctureImage ? req.files.tyrePunctureImage[0].path : null,
+        image: req.files?.punctureImage?.[0]?.path || null,
       },
       otherProblems: {
-        image: req.files?.otherProblemsImage ? req.files.otherProblemsImage[0].path : null,
+        image: req.files?.otherProblemsImage?.[0]?.path || null,
+      },
+      vehicleServicing: {
+        image: req.files?.vehicleServicingImage?.[0]?.path || null, // ✅ Add this line
       },
     };
 
-    // 🔍 Fetch existing cab entry (if it exists)
+    // Check if cab already exists
     let existingCab = await Cab.findOne({ cabNumber });
 
     if (!existingCab) {
-      existingCab = new Cab({ cabNumber });
+      // Create new cab entry
+      const newCab = new Cab({
+        cabNumber,
+        location: {
+          from: parsedLocation?.from,
+          to: parsedLocation?.to,
+          totalDistance,
+          dateTime,
+        },
+        fuel: {
+          type: parsedFuel?.type,
+          amount: parsedFuel?.amount,
+          receiptImage: uploadedImages.fuel.receiptImage,
+          transactionImage: uploadedImages.fuel.transactionImage,
+        },
+        fastTag: {
+          paymentMode: parsedFastTag?.paymentMode,
+          amount: parsedFastTag?.amount,
+          cardDetails: parsedFastTag?.cardDetails,
+        },
+        tyrePuncture: {
+          image: uploadedImages.tyrePuncture.image,
+          repairAmount: parsedTyrePuncture?.repairAmount,
+        },
+        vehicleServicing: {
+          requiredService: parsedVehicleServicing?.requiredService,
+          details: parsedVehicleServicing?.details,
+          image: uploadedImages.vehicleServicing.image, // ✅ Include this
+        },
+        // vehicleServicing: {
+        //   ...existingCab.vehicleServicing,
+        //   ...parsedVehicleServicing,
+        //   image: uploadedImages.vehicleServicing.image || existingCab.vehicleServicing?.image, // ✅ Add this
+        // },
+        
+        otherProblems: {
+          image: uploadedImages.otherProblems.image,
+          details: parsedOtherProblems?.details,
+          amount: parsedOtherProblems?.amount,
+        },
+        Driver,
+        addedBy,
+      });
+
+      await newCab.save();
+      return res.status(201).json({ message: "Cab added successfully", cab: newCab });
     }
 
-    // ✅ Merge provided data with existing data
+    // Merge new values into existing cab
     const updatedData = {
-      ...existingCab.toObject(),
-      ...parsedData, // Merge new fields
+      location: {
+        ...existingCab.location,
+        ...parsedLocation,
+        totalDistance,
+        dateTime,
+      },
       fuel: {
         ...existingCab.fuel,
-        ...parsedData.fuel,
+        ...parsedFuel,
         receiptImage: uploadedImages.fuel.receiptImage || existingCab.fuel?.receiptImage,
         transactionImage: uploadedImages.fuel.transactionImage || existingCab.fuel?.transactionImage,
       },
+      fastTag: {
+        ...existingCab.fastTag,
+        ...parsedFastTag,
+      },
       tyrePuncture: {
         ...existingCab.tyrePuncture,
-        ...parsedData.tyrePuncture,
+        ...parsedTyrePuncture,
         image: uploadedImages.tyrePuncture.image || existingCab.tyrePuncture?.image,
+      },
+      vehicleServicing: {
+        ...existingCab.vehicleServicing,
+        ...parsedVehicleServicing,
       },
       otherProblems: {
         ...existingCab.otherProblems,
-        ...parsedData.otherProblems,
+        ...parsedOtherProblems,
         image: uploadedImages.otherProblems.image || existingCab.otherProblems?.image,
       },
+      Driver,
+      addedBy,
     };
 
-    // ✅ Update or create new entry
     const updatedCab = await Cab.findOneAndUpdate(
       { cabNumber },
       { $set: updatedData },
-      { new: true, upsert: true, runValidators: false } // ✅ Prevent validation errors on missing fields
+      { new: true, upsert: true, runValidators: false }
     );
 
-    res.status(201).json({ message: "Cab data updated successfully", cab: updatedCab });
+    res.status(201).json({ message: "Cab updated successfully", cab: updatedCab });
 
   } catch (error) {
     console.error("🚨 Error adding cab:", error.message);
     res.status(500).json({ message: "Error adding cab", error: error.message });
   }
 };
+
+
+
+
+
 
 const updateCab = async (req, res) => {
   const { id } = req.params;
@@ -311,46 +318,61 @@ const cabList = async (req, res) => {
 };
 
 
-
 const cabExpensive = async (req, res) => {
   try {
     const adminId = req.admin.id;
+    const { fromDate, toDate } = req.query;
+
     console.log("✅ Admin ID:", adminId);
+    console.log("🗓️ From Date:", fromDate, "To Date:", toDate);
 
-    // Fetch all cabs added by this admin
-    const cabs = await Cab.find({ addedBy: adminId });
+    // Build dynamic query
+    const query = { addedBy: adminId };
 
-    console.log("✅ Cabs added by admin:", cabs.length);
+    // Add date filter if both dates are provided
+    if (fromDate && toDate) {
+      query.cabDate = {
+        $gte: new Date(fromDate),
+        $lte: new Date(toDate),
+      };
+    }
+
+    // Fetch filtered cabs
+    const cabs = await Cab.find(query);
+    console.log("✅ Cabs found:", cabs.length);
+
     if (cabs.length === 0) {
-      return res.status(404).json({ success: false, message: "No cabs found for this admin." });
+      return res.status(404).json({ success: false, message: "No cabs found for the given criteria." });
     }
 
     console.log("🔍 First cab sample:", JSON.stringify(cabs[0], null, 2));
 
-    // Manually calculate total expenses
+    // Calculate expenses per cab
     const expenses = cabs.map((cab) => {
+      // Sum the amounts in each category (handle arrays properly)
       const totalExpense =
-        (cab.fuel?.amount || 0) +
-        (cab.fastTag?.amount || 0) +
-        (cab.tyrePuncture?.repairAmount || 0) +
-        (cab.otherProblems?.amount || 0);
+        (cab.fuel?.amount?.reduce((a, b) => a + b, 0) || 0) +
+        (cab.fastTag?.amount?.reduce((a, b) => a + b, 0) || 0) +
+        (cab.tyrePuncture?.repairAmount?.reduce((a, b) => a + (b || 0), 0) || 0) +
+        (cab.otherProblems?.amount?.reduce((a, b) => a + b, 0) || 0);
 
       return {
         cabNumber: cab.cabNumber,
+        cabDate: cab.cabDate,
         totalExpense,
         breakdown: {
-          fuel: cab.fuel?.amount || 0,
-          fastTag: cab.fastTag?.amount || 0,
-          tyrePuncture: cab.tyrePuncture?.repairAmount || 0,
-          otherProblems: cab.otherProblems?.amount || 0,
-        }
+          fuel: cab.fuel?.amount?.reduce((a, b) => a + b, 0) || 0,
+          fastTag: cab.fastTag?.amount?.reduce((a, b) => a + b, 0) || 0,
+          tyrePuncture: cab.tyrePuncture?.repairAmount?.reduce((a, b) => a + (b || 0), 0) || 0,
+          otherProblems: cab.otherProblems?.amount?.reduce((a, b) => a + b, 0) || 0,
+        },
       };
     });
 
-    // Sort by highest expense first
+    // Sort by highest total expense
     expenses.sort((a, b) => b.totalExpense - a.totalExpense);
 
-    console.log("🔍 Expenses After Calculation:", expenses);
+    console.log("📊 Final Expenses Calculated:", expenses);
 
     if (expenses.length === 0) {
       return res.status(404).json({ success: false, message: "No expenses found after calculation!" });
@@ -362,5 +384,74 @@ const cabExpensive = async (req, res) => {
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
+
+
+// const cabExpensive = async (req, res) => {
+//   try {
+//     const adminId = req.admin.id;
+//     const { fromDate, toDate } = req.query;
+
+//     console.log("✅ Admin ID:", adminId);
+//     console.log("🗓️ From Date:", fromDate, "To Date:", toDate);
+
+//     // Build dynamic query
+//     const query = { addedBy: adminId };
+
+//     // Add date filter if both dates are provided
+//     if (fromDate && toDate) {
+//       query.cabDate = {
+//         $gte: new Date(fromDate),
+//         $lte: new Date(toDate),
+//       };
+//     }
+
+//     // Fetch filtered cabs
+//     const cabs = await Cab.find(query);
+//     console.log("✅ Cabs found:", cabs.length);
+
+//     if (cabs.length === 0) {
+//       return res.status(404).json({ success: false, message: "No cabs found for the given criteria." });
+//     }
+
+//     console.log("🔍 First cab sample:", JSON.stringify(cabs[0], null, 2));
+
+//     // Calculate expenses per cab
+//     const expenses = cabs.map((cab) => {
+//       const totalExpense =
+//         (cab.fuel?.amount || 0) +
+//         (cab.fastTag?.amount || 0) +
+//         (cab.tyrePuncture?.repairAmount || 0) +
+//         (cab.otherProblems?.amount || 0);
+
+//       return {
+//         cabNumber: cab.cabNumber,
+//         cabDate: cab.cabDate,
+//         totalExpense,
+//         breakdown: {
+//           fuel: cab.fuel?.amount || 0,
+//           fastTag: cab.fastTag?.amount || 0,
+//           tyrePuncture: cab.tyrePuncture?.repairAmount || 0,
+//           otherProblems: cab.otherProblems?.amount || 0,
+//         },
+//       };
+//     });
+
+//     // Sort by highest total expense
+//     expenses.sort((a, b) => b.totalExpense - a.totalExpense);
+
+//     console.log("📊 Final Expenses Calculated:", expenses);
+
+//     if (expenses.length === 0) {
+//       return res.status(404).json({ success: false, message: "No expenses found after calculation!" });
+//     }
+
+//     res.status(200).json({ success: true, data: expenses });
+//   } catch (error) {
+//     console.error("❌ Error in cabExpensive:", error);
+//     res.status(500).json({ message: "Server Error", error: error.message });
+//   }
+// };
+
+
 
 module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab, cabList, cabExpensive };

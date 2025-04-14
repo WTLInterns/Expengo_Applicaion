@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { assignCab, getAssignCab, unassignCab,getAssignDriver,EditDriverProfile } = require('../controllers/cabAssignmentController')
+const { assignCab, getAssignCab, unassignCab,getAssignDriver,EditDriverProfile, completeTrip } = require('../controllers/cabAssignmentController')
 const { authMiddleware, isAdmin } = require("../middleware/authMiddleware");
 const { driverAuthMiddleware } = require("../middleware/driverAuthMiddleware");
 // ✅ Assign a Cab to a Driver
@@ -14,5 +14,8 @@ router.put('/', authMiddleware,isAdmin ,unassignCab)
 router.get('/driver',driverAuthMiddleware,getAssignDriver);
 
 router.put("/profile", driverAuthMiddleware,EditDriverProfile)
+
+router.put("/complete/:id",  driverAuthMiddleware, completeTrip);
+
 
 module.exports = router;

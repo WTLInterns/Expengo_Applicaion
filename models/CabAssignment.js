@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { stringify } = require('uuid');
 
 const CabAssignmentSchema = new mongoose.Schema({
     driver: {
@@ -15,6 +16,12 @@ const CabAssignmentSchema = new mongoose.Schema({
         type: Date,
         default: Date.now // Timestamp when assigned
     },
+    status: {
+        type: String,
+        enum: ['assigned', 'ongoing', 'completed'], // Status of the assignment
+        default: 'assigned' // Default status when assigned
+    },
+
     assignedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Admin", // Tracks which admin assigned the cab
@@ -22,4 +29,4 @@ const CabAssignmentSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
-module.exports = mongoose.model('CabAssignment',CabAssignmentSchema);
+module.exports = mongoose.model('CabAssignment', CabAssignmentSchema);

@@ -6,6 +6,7 @@ const uploadFields = upload.fields([
     { name: "transactionImage", maxCount: 1 },
     { name: "punctureImage", maxCount: 1 },
     { name: "otherProblemsImage", maxCount: 1 },
+    { name: "vehicleServicingImage", maxCount: 1 },
     { name: "cabImage", maxCount: 1 }
 ]);
 

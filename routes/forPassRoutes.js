@@ -1,10 +1,12 @@
-const express = require("express");
-const { sendResetOTP, forgotPassword, changePassword } = require("../controllers/forpassController");
 
-const router = express.Router();
+const express = require("express")
+const { sendOTP, verifyOTP, resetPassword } = require("../controllers/forPassController")
 
-router.post("/sendpasswordlink", sendResetOTP);
-router.get("/forgotpassword/:id/:token", forgotPassword); 
-router.post("/resetpassword/:id/:token", changePassword);
+const router = express.Router()
 
-module.exports = router;
+// New routes for OTP-based password reset
+router.post("/send-otp", sendOTP)
+router.post("/verify-otp", verifyOTP)
+router.post("/reset-password", resetPassword)
+
+module.exports = router
