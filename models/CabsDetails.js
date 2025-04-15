@@ -46,11 +46,19 @@ const CabSchema = new mongoose.Schema(
             image: { type: [String] }, 
             repairAmount: { type: [Number] },
         },
+        // vehicleServicing: {
+        //     requiredService: { type: Boolean, default: false },
+        //     details: { type: String },
+        //     image: { type: [String] }, // Storing Cloudinary image URL
+        // },
         vehicleServicing: {
-            requiredService: { type: Boolean, default: false },
-            details: { type: String },
-            image: { type: [String] }, // Storing Cloudinary image URL
-        },
+            requiredService: { type: Boolean, default: false }, 
+            details: { type: String },                            
+            image: { type: [String] },             
+            meter: { type: [Number] },               
+            kmTravelled: {type: Number},
+            totalKm: {type: Number},         
+          },
         otherProblems: {
             image: { type: [String] },
             details: { type: String }, 
