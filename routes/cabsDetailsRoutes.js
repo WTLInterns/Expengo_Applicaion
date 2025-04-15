@@ -420,6 +420,7 @@ router.patch('/driver/add', driverAuthMiddleware, upload, async (req, res) => {
             }
         };
 
+        
         // Handle Uploaded Images
         const uploadedImages = {
             fuel: {
