@@ -14,7 +14,6 @@ const getCabs = async (req, res) => {
 
     res.status(200).json(cabs);
   } catch (error) {
-    console.error("Error fetching cabs:", error); // Log the error for debugging
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
@@ -43,8 +42,6 @@ const getCabById = async (req, res) => {
 
 const addCab = async (req, res) => {
   try {
-    console.log("📝 Request Body:", req.body);
-    console.log("📂 Uploaded Files:", req.files);
 
     const {
       cabNumber,
@@ -194,7 +191,6 @@ const addCab = async (req, res) => {
     res.status(201).json({ message: "Cab updated successfully", cab: updatedCab });
 
   } catch (error) {
-    console.error("🚨 Error adding cab:", error.message);
     res.status(500).json({ message: "Error adding cab", error: error.message });
   }
 };
@@ -312,8 +308,7 @@ const cabList = async (req, res) => {
 
     res.status(200).json({ success: true, data: cabs });
   } catch (error) {
-    console.error("Error in cabList:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
+     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
 
@@ -322,10 +317,7 @@ const cabExpensive = async (req, res) => {
   try {
     const adminId = req.admin.id;
     const { fromDate, toDate } = req.query;
-
-    console.log("✅ Admin ID:", adminId);
-    console.log("🗓️ From Date:", fromDate, "To Date:", toDate);
-
+ 
     // Build dynamic query
     const query = { addedBy: adminId };
 
@@ -339,14 +331,12 @@ const cabExpensive = async (req, res) => {
 
     // Fetch filtered cabs
     const cabs = await Cab.find(query);
-    console.log("✅ Cabs found:", cabs.length);
-
+ 
     if (cabs.length === 0) {
       return res.status(404).json({ success: false, message: "No cabs found for the given criteria." });
     }
 
-    console.log("🔍 First cab sample:", JSON.stringify(cabs[0], null, 2));
-
+ 
     // Calculate expenses per cab
     const expenses = cabs.map((cab) => {
       // Sum the amounts in each category (handle arrays properly)
@@ -372,86 +362,15 @@ const cabExpensive = async (req, res) => {
     // Sort by highest total expense
     expenses.sort((a, b) => b.totalExpense - a.totalExpense);
 
-    console.log("📊 Final Expenses Calculated:", expenses);
-
+ 
     if (expenses.length === 0) {
       return res.status(404).json({ success: false, message: "No expenses found after calculation!" });
     }
 
     res.status(200).json({ success: true, data: expenses });
   } catch (error) {
-    console.error("❌ Error in cabExpensive:", error);
-    res.status(500).json({ message: "Server Error", error: error.message });
+     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };
-
-
-// const cabExpensive = async (req, res) => {
-//   try {
-//     const adminId = req.admin.id;
-//     const { fromDate, toDate } = req.query;
-
-//     console.log("✅ Admin ID:", adminId);
-//     console.log("🗓️ From Date:", fromDate, "To Date:", toDate);
-
-//     // Build dynamic query
-//     const query = { addedBy: adminId };
-
-//     // Add date filter if both dates are provided
-//     if (fromDate && toDate) {
-//       query.cabDate = {
-//         $gte: new Date(fromDate),
-//         $lte: new Date(toDate),
-//       };
-//     }
-
-//     // Fetch filtered cabs
-//     const cabs = await Cab.find(query);
-//     console.log("✅ Cabs found:", cabs.length);
-
-//     if (cabs.length === 0) {
-//       return res.status(404).json({ success: false, message: "No cabs found for the given criteria." });
-//     }
-
-//     console.log("🔍 First cab sample:", JSON.stringify(cabs[0], null, 2));
-
-//     // Calculate expenses per cab
-//     const expenses = cabs.map((cab) => {
-//       const totalExpense =
-//         (cab.fuel?.amount || 0) +
-//         (cab.fastTag?.amount || 0) +
-//         (cab.tyrePuncture?.repairAmount || 0) +
-//         (cab.otherProblems?.amount || 0);
-
-//       return {
-//         cabNumber: cab.cabNumber,
-//         cabDate: cab.cabDate,
-//         totalExpense,
-//         breakdown: {
-//           fuel: cab.fuel?.amount || 0,
-//           fastTag: cab.fastTag?.amount || 0,
-//           tyrePuncture: cab.tyrePuncture?.repairAmount || 0,
-//           otherProblems: cab.otherProblems?.amount || 0,
-//         },
-//       };
-//     });
-
-//     // Sort by highest total expense
-//     expenses.sort((a, b) => b.totalExpense - a.totalExpense);
-
-//     console.log("📊 Final Expenses Calculated:", expenses);
-
-//     if (expenses.length === 0) {
-//       return res.status(404).json({ success: false, message: "No expenses found after calculation!" });
-//     }
-
-//     res.status(200).json({ success: true, data: expenses });
-//   } catch (error) {
-//     console.error("❌ Error in cabExpensive:", error);
-//     res.status(500).json({ message: "Server Error", error: error.message });
-//   }
-// };
-
-
-
+ 
 module.exports = { getCabs, getCabById, addCab, updateCab, deleteCab, cabList, cabExpensive };

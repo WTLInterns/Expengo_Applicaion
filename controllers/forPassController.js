@@ -72,7 +72,6 @@ const sendOTP = async (req, res) => {
 
     return res.status(200).json({ message: "OTP sent successfully to your email" });
   } catch (error) {
-    console.error("Error in sendOTP:", error);
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -103,7 +102,6 @@ const verifyOTP = async (req, res) => {
     // OTP is valid, allow user to reset password
     return res.status(200).json({ message: "OTP verified successfully" })
   } catch (error) {
-    console.error("Error in verifyOTP:", error)
     return res.status(500).json({ message: "Internal Server Error" })
   }
 }
@@ -138,7 +136,6 @@ const resetPassword = async (req, res) => {
 
     return res.status(200).json({ message: "Password reset successful" })
   } catch (error) {
-    console.error("Error in resetPassword:", error)
     return res.status(500).json({ message: "Internal Server Error" })
   }
 }

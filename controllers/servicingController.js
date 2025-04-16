@@ -36,7 +36,6 @@ exports.updateServicingStatus = async (req, res) => {
             return res.status(403).json({ error: "Unauthorized" });
         }
 
-        console.log(req);
         servicing.receiptImage = req.file?.path || servicing.receiptImage;
         servicing.servicingAmount = req.body.servicingCost || servicing.servicingCost;
         servicing.status = "completed";

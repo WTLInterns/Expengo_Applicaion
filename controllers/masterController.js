@@ -20,7 +20,6 @@ exports.registerMasterAdmin = async (req, res) => {
 
         res.status(201).json({ message: "Master Admin registered successfully" });
     } catch (error) {
-        console.error("Register Error:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };
@@ -40,7 +39,6 @@ exports.adminLogin = async (req, res) => {
 
         res.status(200).json({ message: "Login successfully" });
     } catch (error) {
-        console.error("Login Error:", error);
         res.status(500).json({ message: "Server Error" });
     }
 };

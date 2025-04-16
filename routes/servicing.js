@@ -18,8 +18,7 @@ const {
 router.post("/assign", authMiddleware, assignServicing);
 
 // ✅ Driver updates servicing status with receipt and cost
-router.put(
-  "/update/:id",
+router.put("/update/:id",
   driverAuthMiddleware,
   upload.single("receiptImage"),
   updateServicingStatus

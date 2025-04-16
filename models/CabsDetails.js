@@ -54,10 +54,13 @@ const CabSchema = new mongoose.Schema(
         vehicleServicing: {
             requiredService: { type: Boolean, default: false }, 
             details: { type: String },                            
-            image: { type: [String] },             
+            image: { type: [String] }, 
+            receiptImage: { type: [String] },  
+            amount: { type: [Number] },          
             meter: { type: [Number] },               
             kmTravelled: {type: Number},
-            totalKm: {type: Number},         
+            totalKm: {type: Number},   
+              
           },
         otherProblems: {
             image: { type: [String] },

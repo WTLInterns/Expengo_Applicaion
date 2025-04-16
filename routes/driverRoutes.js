@@ -45,7 +45,6 @@ router.put("/profile/:id", authMiddleware, async (req, res) => {
 
         res.json({ message: "Driver profile updated successfully", updatedDriver });
     } catch (err) {
-        console.error("❌ Error updating driver:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
@@ -77,7 +76,6 @@ router.delete("/profile/:id", authMiddleware, async (req, res) => {
 
         res.json({ message: "Driver and image deleted successfully" });
     } catch (err) {
-        console.error("❌ Error deleting driver:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 
@@ -102,7 +100,6 @@ router.post("/forgot-password", async (req, res) => {
         res.status(200).json({ message: "Driver verified. Proceed to set new password", driverId: driver._id });
 
     } catch (err) {
-        console.error("Forgot Password Error:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 });
@@ -126,7 +123,6 @@ router.post("/reset-password",  async (req, res) => {
   
       res.status(200).json({ message: "Password updated successfully. You can now log in." });
     } catch (err) {
-      console.error("Reset Password Error:", err);
       res.status(500).json({ message: "Server error", error: err.message });
     }
   }

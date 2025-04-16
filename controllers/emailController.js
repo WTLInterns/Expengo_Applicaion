@@ -104,8 +104,7 @@ const sendSubAdminEmail = async (req, res) => {
 
     // Send the email with credentials
     const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully:", info.messageId);
-
+ 
     // Respond with success message
     return res.json({
       success: true,
@@ -113,8 +112,7 @@ const sendSubAdminEmail = async (req, res) => {
       messageId: info.messageId,
     });
   } catch (error) {
-    console.error("Error creating sub-admin or sending email:", error);
-    return res.status(500).json({
+     return res.status(500).json({
       success: false,
       message: "Error creating sub-admin or sending email",
       error: error.message,
@@ -165,8 +163,7 @@ const loginSubAdmin = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+     return res.status(500).json({ success: false, message: "Server error", error: error.message });
   }
 };
 

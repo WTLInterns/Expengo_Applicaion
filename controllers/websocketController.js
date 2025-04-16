@@ -2,7 +2,6 @@ const WebSocket = require("ws")
 const clients = new Map()
 
 const handleConnection = (ws) => {
-  console.log("New WebSocket connection")
 
   ws.on("message", (message) => {
     try {
@@ -41,7 +40,6 @@ const handleConnection = (ws) => {
         }
       }
     } catch (error) {
-      console.error("Error handling message:", error)
     }
   })
 

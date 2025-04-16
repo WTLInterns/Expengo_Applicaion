@@ -38,7 +38,6 @@ const registerAdmin = async (req, res) => {
 
     res.status(201).json({ message: "Admin registered successfully" });
   } catch (error) {
-    console.error("Register Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -59,8 +58,7 @@ const adminLogin = async (req, res) => {
         .json({ message: "Your account is blocked. Contact admin." });
     }
 
-    console.log("Stored Hash:", admin.password);
-    console.log("Entered Password:", password);
+  
 
     // ✅ Compare hashed password with entered password
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -71,12 +69,11 @@ const adminLogin = async (req, res) => {
     const token = jwt.sign(
       { id: admin._id, role: "admin" },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "10d" }
     );
 
     res.status(200).json({ message: "Login successful!", token ,id:admin._id});
   } catch (error) {
-    console.error("Login Error:", error);
     res.status(500).json({ message: "Server Error" });
   }
 };
@@ -86,10 +83,8 @@ const totalSubAdminCount = async (req, res) => {
     // If you are counting admin documents
     const subAdminCount = await Admin.countDocuments(); // Ensure this is the correct model for the task
 
-    console.log("count of sub-admins", subAdminCount);
     res.status(200).json({ count: subAdminCount }); // ✅ Send correct response
   } catch (error) {
-    console.error("Error counting sub-admins:", error);
     res.status(500).json({ message: "Error counting sub-admins" });
   }
 };
@@ -99,10 +94,8 @@ const totalDriver = async (req, res) => {
     // If you are counting admin documents
     const driver = await Driver.countDocuments(); // Ensure this is the correct model for the task
 
-    console.log("count of Drivers", driver);
     res.status(200).json({ count: driver }); // ✅ Send correct response
   } catch (error) {
-    console.error("Error counting sub-admins:", error);
     res.status(500).json({ message: "Error counting sub-admins" });
   }
 };
@@ -112,10 +105,8 @@ const totalCab = async (req, res) => {
     // If you are counting admin documents
     const cab = await Cab.countDocuments(); // Ensure this is the correct model for the task
 
-    console.log("count of cabs", cab);
     res.status(200).json({ count: cab }); // ✅ Send correct response
   } catch (error) {
-    console.error("Error counting sub-admins:", error);
     res.status(500).json({ message: "Error counting sub-admins" });
   }
 };
@@ -128,7 +119,6 @@ const getAllSubAdmins = async (req, res) => {
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, subAdmins });
   } catch (error) {
-    console.error("Error fetching sub-admins:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch sub-admins",
@@ -199,7 +189,6 @@ const addNewSubAdmin = async (req, res) => {
 
     // Optionally generate invoice number (if needed for display or testing)
     const invoiceNumber = generateInvoiceNumber(newSubAdmin.name); // ✅ Correct
-    console.log("Generated Invoice:", generateInvoiceNumber(newSubAdmin.name));
 
     // Send welcome email
     const mailOptions = {
@@ -234,7 +223,6 @@ const addNewSubAdmin = async (req, res) => {
       newSubAdmin: subAdminResponse,
     });
   } catch (error) {
-    console.error("Error adding sub-admin:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to add sub-admin",
@@ -257,7 +245,6 @@ const getSubAdminById = async (req, res) => {
 
     res.status(200).json({ success: true, subAdmin });
   } catch (error) {
-    console.error("Error fetching sub-admin:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch sub-admin",
@@ -325,7 +312,6 @@ const updateSubAdmin = async (req, res) => {
       subAdmin: updatedSubAdmin,
     });
   } catch (error) {
-    console.error("Error updating sub-admin:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update sub-admin",
@@ -352,7 +338,6 @@ const deleteSubAdmin = async (req, res) => {
 
     // If no related cabs or drivers are deleted, it's still fine to delete the sub-admin
     if (!relatedDataDeleted) {
-      console.log("No related cabs or drivers found, but sub-admin was still deleted.");
     }
 
     // Send success response
@@ -364,7 +349,6 @@ const deleteSubAdmin = async (req, res) => {
       deletedDrivers
     });
   } catch (error) {
-    console.error("Error deleting sub-admin:", error);
     res.status(500).json({
       success: false,
       message: "Failed to delete sub-admin and related data",
@@ -402,7 +386,6 @@ const toggleBlockStatus = async (req, res) => {
       subAdmin: updatedSubAdmin,
     });
   } catch (error) {
-    console.error("Error toggling sub-admin status:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update sub-admin status",
@@ -414,18 +397,14 @@ const toggleBlockStatus = async (req, res) => {
 // expense
 const addExpense = async (req, res) => {
   try {
-    console.log("Received request:", req.body);
     const { type, amount, driver, cabNumber } = req.body;
 
     const newExpense = new Expense({ type, amount, driver, cabNumber });
-    console.log("Saving expense:", newExpense);
 
     await newExpense.save();
-    console.log("Expense saved successfully");
 
     res.status(201).json(newExpense);
   } catch (error) {
-    console.error("Error adding expense:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -436,14 +415,12 @@ const getAllExpenses = async (req, res) => {
     // Fetch all cabs added by this admin
     const cabs = await Cab.find();
 
-    console.log("✅ Cabs added by admin:", cabs.length);
     if (cabs.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "No cabs found for this admin." });
     }
 
-    console.log("🔍 First cab sample:", JSON.stringify(cabs[0], null, 2));
 
     // Manually calculate total expenses
     const expenses = cabs.map((cab) => {
@@ -468,7 +445,6 @@ const getAllExpenses = async (req, res) => {
     // Sort by highest expense first
     expenses.sort((a, b) => b.totalExpense - a.totalExpense);
 
-    console.log("🔍 Expenses After Calculation:", expenses);
 
     if (expenses.length === 0) {
       return res
@@ -481,7 +457,6 @@ const getAllExpenses = async (req, res) => {
 
     res.status(200).json({ success: true, data: expenses });
   } catch (error) {
-    console.error("❌ Error in cabExpensive:", error);
     res.status(500).json({ message: "Server Error", error: error.message });
   }
 };

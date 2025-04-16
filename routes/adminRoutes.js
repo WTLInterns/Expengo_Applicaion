@@ -59,7 +59,6 @@ router.post(
         return res.status(400).json({ error: "No file uploaded!" });
       }
 
-      console.log("Uploaded file:", req.file); // Debugging
       res.json({
         message: "File uploaded successfully!",
         fileUrl: req.file.path,

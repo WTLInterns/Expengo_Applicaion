@@ -34,8 +34,7 @@ const sendResetOTP = async (req, res) => {
     user.otpExpiry = otpExpiry;
     await user.save();
 
-    console.log(`✅ OTP Generated: ${otp} (Expires at: ${otpExpiry})`);
-
+ 
     // ✅ Send Email
     const mailOptions = {
       from: process.env.EMAIL_USER,
@@ -46,16 +45,13 @@ const sendResetOTP = async (req, res) => {
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error("❌ Email Error:", error);
-        return res.status(500).json({ message: "Failed to send OTP" });
+         return res.status(500).json({ message: "Failed to send OTP" });
       } else {
-        console.log("✅ OTP Email Sent:", info.response);
-        return res.status(200).json({ message: "OTP sent successfully" });
+         return res.status(200).json({ message: "OTP sent successfully" });
       }
     });
   } catch (error) {
-    console.error("❌ Internal Server Error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -115,8 +111,7 @@ const changePassword = async (req, res) => {
     res.status(200).json({ message: "Password changed successfully" });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+     res.status(500).json({ message: "Server error" });
   }
 };
 
