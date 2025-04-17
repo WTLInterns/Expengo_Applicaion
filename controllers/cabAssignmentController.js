@@ -9,7 +9,7 @@ const getAssignCab = async (req, res) => {
   try {
     const adminId = req.admin._id;
 
-    const assignments = await CabAssignment.find({ status: { $ne: "completed" } })
+    const assignments = await CabAssignment.find()
       .populate("cab")
       .populate("driver");
 
