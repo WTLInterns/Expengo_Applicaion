@@ -4,6 +4,177 @@ const Driver = require('../models/loginModel');
 const Cab = require('../models/CabsDetails');
 const mongoose = require('mongoose');
 
+const assignTripToDriver = async (req, res) => {
+  try {
+    const { driverId, cabNumber, assignedBy } = req.body;
+
+    if (!driverId || !cabNumber || !assignedBy) {
+      return res.status(400).json({ message: "Driver ID, Cab Number, and Assigned By are required" });
+    }
+
+    const cab = mongoose.Types.ObjectId.isValid(cabNumber)
+      ? await Cab.findById(cabNumber)
+      : await Cab.findOne({ cabNumber });
+
+    if (!cab) return res.status(404).json({ message: "Cab not found" });
+
+    const existingAssignment = await CabAssignment.findOne({
+      $or: [
+        { driver: driverId, status: { $ne: "completed" } },
+        { cab: cab._id, status: { $ne: "completed" } }
+      ]
+    });
+
+    if (existingAssignment) {
+      return res.status(400).json({ message: "Driver or cab already has an active trip" });
+    }
+
+    const assignment = new CabAssignment({
+      driver: driverId,
+      cab: cab._id,
+      assignedBy,
+      status: "assigned",
+    });
+
+    await assignment.save();
+    res.status(201).json({ message: "✅ Trip assigned to driver", assignment });
+  } catch (error) {
+    console.error("❌ Error assigning trip:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const updateTripDetailsByDriver = async (req, res) => {
+  try {
+    const driverId = req.driver.id;
+
+    // Find the active trip for the driver
+    const assignment = await CabAssignment.findOne({
+      driver: driverId,
+      status: { $ne: "completed" },
+    });
+
+    if (!assignment) {
+      return res.status(404).json({ message: "No active trip found for this driver." });
+    }
+
+    const files = req.files || {};
+    const body = req.body;
+
+    // Sanitize keys to remove unwanted characters like tabs
+    const sanitizeKeys = (obj) => {
+      const sanitized = {};
+      for (const key in obj) {
+        sanitized[key.trim()] = obj[key];
+      }
+      return sanitized;
+    };
+
+    const sanitizedBody = sanitizeKeys(body);
+
+    // Helper to safely parse JSON
+    const parseJSONSafely = (data, fallback = {}) => {
+      try {
+        return typeof data === "string" ? JSON.parse(data) : data;
+      } catch {
+        return fallback;
+      }
+    };
+
+    // Helper to extract image paths from uploaded files
+    const extractImageArray = (fieldName) =>
+      Array.isArray(files[fieldName]) ? files[fieldName].map((f) => f.path) : [];
+
+    // Helper to merge arrays
+    const appendArray = (existing = [], incoming) => {
+      if (!incoming) return existing;
+      return Array.isArray(incoming) ? [...existing, ...incoming] : [...existing, incoming];
+    };
+
+    // Initialize trip details if missing
+    if (!assignment.tripDetails) {
+      assignment.tripDetails = {};
+    }
+
+    const trip = assignment.tripDetails;
+
+    // ✅ Update location
+    if (sanitizedBody.location) {
+      const parsedLocation = parseJSONSafely(sanitizedBody.location);
+      trip.location = { ...trip.location, ...parsedLocation };
+    }
+
+    // ✅ Update fuel details
+    if (sanitizedBody.fuel) {
+      const fuel = parseJSONSafely(sanitizedBody.fuel);
+      trip.fuel = {
+        ...trip.fuel,
+        ...fuel,
+        amount: appendArray(trip?.fuel?.amount, fuel.amount),
+        receiptImage: appendArray(trip?.fuel?.receiptImage, extractImageArray("receiptImage")),
+        transactionImage: appendArray(trip?.fuel?.transactionImage, extractImageArray("transactionImage")),
+      };
+    }
+
+    // ✅ Update fast tag details
+    if (sanitizedBody.fastTag) {
+      const tag = parseJSONSafely(sanitizedBody.fastTag);
+      trip.fastTag = {
+        ...trip.fastTag,
+        ...tag,
+        amount: appendArray(trip?.fastTag?.amount, tag.amount),
+      };
+    }
+
+    // ✅ Update tyre puncture details
+    if (sanitizedBody.tyrePuncture) {
+      const tyre = parseJSONSafely(sanitizedBody.tyrePuncture);
+      trip.tyrePuncture = {
+        ...trip.tyrePuncture,
+        ...tyre,
+        repairAmount: appendArray(trip?.tyrePuncture?.repairAmount, tyre.repairAmount),
+        image: appendArray(trip?.tyrePuncture?.image, extractImageArray("punctureImage")),
+      };
+    }
+
+    // ✅ Update vehicle servicing details
+    if (sanitizedBody.vehicleServicing) {
+      const service = parseJSONSafely(sanitizedBody.vehicleServicing);
+      trip.vehicleServicing = {
+        ...trip.vehicleServicing,
+        ...service,
+        amount: appendArray(trip?.vehicleServicing?.amount, service.amount),
+        meter: appendArray(trip?.vehicleServicing?.meter, service.meter),
+        image: appendArray(trip?.vehicleServicing?.image, extractImageArray("vehicleServicingImage")),
+        receiptImage: appendArray(trip?.vehicleServicing?.receiptImage, extractImageArray("vehicleServicingReceiptImage")),
+      };
+    }
+
+    // ✅ Update other problems
+    if (sanitizedBody.otherProblems) {
+      const other = parseJSONSafely(sanitizedBody.otherProblems);
+      trip.otherProblems = {
+        ...trip.otherProblems,
+        ...other,
+        amount: appendArray(trip?.otherProblems?.amount, other.amount),
+        image: appendArray(trip?.otherProblems?.image, extractImageArray("otherProblemsImage")),
+      };
+    }
+
+    // Save the updated trip details
+    assignment.tripDetails = trip;
+    await assignment.save();
+
+    res.status(200).json({
+      message: "✅ Trip details updated successfully",
+      assignment,
+    });
+  } catch (err) {
+    console.error("❌ Trip update error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
 // ✅ Get all active cabs assigned by the logged-in admin
 const getAssignCab = async (req, res) => {
   try {
@@ -146,5 +317,7 @@ module.exports = {
   unassignCab,
   EditDriverProfile,
   getAssignDriver,
-  completeTrip
+  completeTrip,
+  assignTripToDriver,
+  updateTripDetailsByDriver
 };
