@@ -206,7 +206,7 @@ const addNewSubAdmin = async (req, res) => {
           <p>Please log in and change your password after first login.</p>
           <br>
           <div style="text-align: center;">
-            <a href="https://your-frontend-login-url.com" style="background: #007BFF; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Login Now</a>
+            <a href="http://localhost:3000/" style="background: #007BFF; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">Login Now</a>
           </div>
         </div>
       `,
